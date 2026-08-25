@@ -181,7 +181,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
             <button type="button" onClick="{{ dk.open }}" title="{{ dk.title }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;background:{{ dk.bg }};border:1px solid {{ dk.border }};border-radius:6px;padding:4px 3px 2px;color:#c5d4d8">
               <span style="position:relative;display:inline-grid;place-items:center;width:34px;height:34px;border-radius:8px;color:#fff;overflow:hidden;background:#fff;box-shadow:{{ dk.tileShadow }}">
                 <em style="font-style:normal;font-size:11px;font-weight:700;letter-spacing:-0.04em;width:100%;height:100%;display:grid;place-items:center;background:{{ dk.markBg }}">{{ dk.initials }}</em>
-                <img alt="" data-logo="{{ dk.logoDomain }}" decoding="async" referrerpolicy="no-referrer" onError="{{ hideImg }}" style="position:absolute;inset:5px;width:calc(100% - 10px);height:calc(100% - 10px);object-fit:contain;object-position:center;background:#fff">
+                <img alt="" data-logo="{{ dk.logoDomain }}" decoding="async" referrerpolicy="no-referrer" onError="{{ hideImg }}" style="position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;object-position:center;background:#fff">
               </span>
               <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1;color:{{ dk.nColor }};letter-spacing:0.02em">{{ dk.n }}</span>
             </button>
@@ -228,7 +228,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
           <div style="display:grid;grid-template-columns:48px 1fr auto;gap:14px;align-items:start;margin-bottom:18px">
             <span style="position:relative;display:inline-grid;place-items:center;width:48px;height:48px;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,0.14)">
               <em style="font-style:normal;font-size:11px;font-weight:700;width:100%;height:100%;display:grid;place-items:center;color:#fff;background:{{ cp.markBg }}">{{ cp.initials }}</em>
-              <img alt="" data-logo="{{ cp.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:7px;width:calc(100% - 14px);height:calc(100% - 14px);object-fit:contain;background:#fff">
+              <img alt="" data-logo="{{ cp.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:3px;width:calc(100% - 6px);height:calc(100% - 6px);object-fit:contain;background:#fff">
             </span>
             <div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6;margin-bottom:8px">{{ cp.typeName }}</div>
@@ -290,7 +290,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
           <div style="display:grid;grid-template-columns:48px 1fr auto;gap:14px;align-items:start;margin-bottom:18px">
             <span style="position:relative;display:inline-grid;place-items:center;width:48px;height:48px;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,0.14)">
               <em style="font-style:normal;font-size:11px;font-weight:700;width:100%;height:100%;display:grid;place-items:center;color:#fff;background:{{ pp.markBg }}">{{ pp.coInitials }}</em>
-              <img alt="" data-logo="{{ pp.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:7px;width:calc(100% - 14px);height:calc(100% - 14px);object-fit:contain;background:#fff">
+              <img alt="" data-logo="{{ pp.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:3px;width:calc(100% - 6px);height:calc(100% - 6px);object-fit:contain;background:#fff">
             </span>
             <div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6;margin-bottom:8px">{{ pp.why }}</div>
@@ -422,7 +422,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
                 <div style="display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:start">
                   <span style="position:relative;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;overflow:hidden;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,0.14)">
                     <em style="font-style:normal;font-size:11px;font-weight:700;width:100%;height:100%;display:grid;place-items:center;color:#fff;background:{{ j.markBg }}">{{ j.initials }}</em>
-                    <img alt="" data-logo="{{ j.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);object-fit:contain;background:#fff">
+                    <img alt="" data-logo="{{ j.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;background:#fff">
                   </span>
                   <div>
                     <h3 style="margin:0;font-size:16px;letter-spacing:-0.03em">{{ j.title }}</h3>
@@ -657,7 +657,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
               <button type="button" onClick="{{ ib.open }}" style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:center;width:100%;text-align:left;background:#0e2a32;border:1px solid #1c3d46;color:#e8f4f4;border-radius:14px;padding:10px 12px" style-hover="border-color:rgba(58,214,201,0.45)">
                 <span style="position:relative;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;overflow:hidden;background:#fff">
                   <em style="font-style:normal;font-size:11px;font-weight:700;width:100%;height:100%;display:grid;place-items:center;color:#fff;background:{{ ib.markBg }}">{{ ib.initials }}</em>
-                  <img alt="" data-logo="{{ ib.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);object-fit:contain;background:#fff">
+                  <img alt="" data-logo="{{ ib.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;background:#fff">
                 </span>
                 <span>
                   <b>{{ ib.name }}</b>
