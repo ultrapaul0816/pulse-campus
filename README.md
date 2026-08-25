@@ -107,7 +107,7 @@ prototype/HANDOFF.md   Notes from the design drop (momentum, tape, daily drop, i
 ### Data / graph
 
 - `data.js` — colleges (id, short, city, NIRF, alumni, departments, companies by type). NIT Trichy (`nitt`) has 27 employers.
-- `graph.js` — turns company counts × role book into people. Keys look like `Bosch|Quality Engineer|Rohit V.` or `Bosch|Quality Engineer|0` for synthesised rows. Logos: `logoSrc(domain)` → `app/logos/{domain}.png`, then Google favicon, then initials. Clearbit is not used (blocked).
+- `graph.js` — turns company counts × role book into people. Keys look like `Bosch|Quality Engineer|Rohit V.` or `Bosch|Quality Engineer|0` for synthesised rows. Logos: `app/logos/{domain}.png` copied from **Pulse** (`logoUrl` on `/api/companies`, CI3 + Pulse S3). Favicon then initials if missing.
 - Live jobs in `data.js` are illustrative of Pulse/market cuts, not a live API. College affinity = **counts**, not verified names.
 
 ### State (`app.js`)
