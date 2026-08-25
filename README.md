@@ -4,8 +4,11 @@ Desktop-first **TPO first-session mock** for Cognavi Pulse. A placement office c
 
 No backend. Seeded demo data. Session in `localStorage`. Not the full University OS (`cognavi-university` — leave that repo alone).
 
-**Live:** https://ultrapaul0816.github.io/pulse-campus/  
+**Live (current design prototype):** https://ultrapaul0816.github.io/pulse-campus/  
+**Vanilla SPA (previous implementation):** https://ultrapaul0816.github.io/pulse-campus/app/  
 **Repo:** https://github.com/ultrapaul0816/pulse-campus
+
+The root page is the design-canvas prototype (`index.html` + `support.js`) with momentum, radar pings, daily drop, market tape, campus report, and a threaded inbox. It reads `app/data.js` and `app/graph.js`. The earlier IIFE mock still lives in `app/`. Handoff notes: `prototype/HANDOFF.md`.
 
 ---
 
@@ -58,12 +61,14 @@ For the **clickable demo**, the mock seeds a few people as already on Pulse at t
 
 ## Run locally
 
+From the **repo root** (needed so the prototype can load `./support.js` and `./app/data.js`):
+
 ```bash
-cd app
 python3 -m http.server 3020 --bind 127.0.0.1
 ```
 
-Open http://127.0.0.1:3020/
+- Prototype (designs): http://127.0.0.1:3020/
+- Vanilla SPA: http://127.0.0.1:3020/app/
 
 **Reset demo** in the header clears `localStorage` and starts over.
 
@@ -76,13 +81,27 @@ After CSS/JS edits, bump the `?v=` query on the matching tag in `app/index.html`
 ## Repo layout
 
 ```
-app/index.html    shell, Inter + IBM Plex Mono, cache-busted asset tags
+index.html        Design-canvas prototype (current TPO designs). STORAGE = pulse-campus:dc:v1
+support.js        Prototype runtime (generated). Do not hand-edit.
+app/index.html    Vanilla IIFE SPA (previous implementation)
 app/styles.css    Grok dark + teal
 app/data.js       14 colleges, employer counts, jobs j1–j27 (some intern: true)
 app/graph.js      buildEmployment, role books, COMPANY_DOMAINS, logoHTML
 app/app.js        IIFE SPA. STORAGE = pulse-campus:tpo:v8. LOOKS_MAX = 3
-.github/workflows/pages.yml   deploys app/ to GitHub Pages on push to main
+prototype/HANDOFF.md   Notes from the design drop (momentum, tape, daily drop, inbox)
+.github/workflows/pages.yml   deploys root prototype + app/ to GitHub Pages
 ```
+
+### Prototype extras (root `index.html`)
+
+- **Momentum bar** — climbs on visit (+3), reveal (+10), ask (+14), reply (+20)
+- **Radar pings** — every ~5s, floating signal labels + sonar echo
+- **Daily drop** — full-screen 3-look moment, overnight joins, fresh tape
+- **Market tape** — scrolling live roles; Pro-locked filters (My branches / Warm paths / Today)
+- **Campus report** — sector mix, cities, CTC bands, principal brief
+- **Inbox** — threads, timestamps, Send 2 profiles, Nudge
+- **Job cards** — Match my 2027, Copy brief
+- Japan-linked filter dropped in the prototype (data still in `data.js`)
 
 ### Data / graph
 

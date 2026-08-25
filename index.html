@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;min-height:100%;background:#000}
+a{color:#08a4b8}a:hover{color:#3ad6c9}
+button{cursor:pointer;font:inherit}
+input,select{font:inherit}
+input::placeholder{color:#6d838a}
+button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offset:3px}
+@keyframes sweep{to{transform:rotate(360deg)}}
+@keyframes inspectring{0%{transform:scale(1);opacity:.85}100%{transform:scale(2.1);opacity:0}}
+@keyframes pingring{0%{transform:scale(.4);opacity:.9}100%{transform:scale(3.4);opacity:0}}
+@keyframes dropin{0%{opacity:0;transform:translateY(-42px) scale(.6)}62%{opacity:1;transform:translateY(4px) scale(1.08)}100%{opacity:1;transform:none}}
+@keyframes rise{to{opacity:1;transform:none}}
+@keyframes tickin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes tape{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes blip{0%{opacity:0;transform:scale(.4)}30%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(.7)}}
+</style>
+<script>window.hideImg=function(e){var t=(e&&e.target)||e;if(t&&t.style)t.style.display="none"};setInterval(function(){document.querySelectorAll("img[data-logo]").forEach(function(im){var d=im.getAttribute("data-logo");if(!im.dataset.done&&d&&d.indexOf("{")<0&&d.indexOf(".")>0){im.dataset.done="1";im.onerror=function(){im.style.display="none"};im.src="https://logo.clearbit.com/"+d;}});},400);</script>
+<script src="./app/data.js"></script>
+<script src="./app/graph.js"></script>
+</helmet>
+<div style="min-height:100vh;background:#000;color:#fcfcfc;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.5;letter-spacing:-0.011em">
+
+<sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="Landing gate" style="min-height:100vh;display:grid;place-items:center;padding:36px 20px 72px">
+    <div style="width:min(560px,100%);display:grid;justify-items:center;text-align:center">
+      <div style="display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#08a4b8">
+        <span style="width:18px;height:18px;border-radius:50%;border:1.5px solid #08a4b8;position:relative;display:inline-block"><span style="position:absolute;inset:4px;border-radius:50%;background:#08a4b8"></span></span>
+        Pulse
+      </div>
+      <div style="width:min(400px,86vw);aspect-ratio:1;position:relative;border-radius:50%;background:repeating-radial-gradient(circle at 50% 50%, transparent 0 11.6%, rgba(255,255,255,0.05) 12% 12.3%),radial-gradient(circle at 50% 50%, #141414 0%, #050505 70%);box-shadow:0 0 0 1px #212121;overflow:hidden;margin:18px 0 8px">
+        <div style="position:absolute;inset:0;background:conic-gradient(from 0deg, transparent 0 74%, rgba(255,255,255,0.04) 88%, rgba(8,164,184,0.5) 100%);animation:sweep 3.4s linear infinite"></div>
+        <div style="position:absolute;left:50%;top:8%;bottom:8%;width:1px;background:rgba(255,255,255,0.08)"></div>
+        <div style="position:absolute;top:50%;left:8%;right:8%;height:1px;background:rgba(255,255,255,0.08)"></div>
+        <sc-for list="{{ landingDots }}" as="d" hint-placeholder-count="0">
+          <div style="position:absolute;width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:50%;left:{{ d.left }}%;top:{{ d.top }}%;background:{{ d.color }};box-shadow:0 0 10px {{ d.color }}"></div>
+        </sc-for>
+        <div style="position:absolute;inset:42%;border-radius:50%;background:#0a2229;border:1px solid rgba(58,214,201,0.45);display:grid;place-items:center;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#08a4b8;z-index:3">Campus</div>
+      </div>
+      <h1 style="font-weight:700;font-size:clamp(32px,5vw,52px);letter-spacing:-0.045em;margin:10px 0 8px">Which campus.</h1>
+      <p style="color:#b7c9ce;max-width:42ch;margin:0">Where last year&rsquo;s batch works &mdash; and a way to use them for this year&rsquo;s.</p>
+      <label style="width:min(420px,100%);text-align:left;margin-top:22px;display:grid;gap:6px;position:relative">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8aa0a6">University</span>
+        <input type="text" autocomplete="off" placeholder="NIT Trichy, VIT, COEP&hellip;" value="{{ query }}" onInput="{{ onQuery }}" onFocus="{{ onSearchFocus }}" style="width:100%;background:#141414;color:#fcfcfc;border:1px solid #2a2a2a;border-radius:16px;padding:12px 16px;box-sizing:border-box">
+        <sc-if value="{{ searchOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;z-index:5;left:0;right:0;top:calc(100% + 6px);background:#141414;border:1px solid #2a2a2a;border-radius:16px;max-height:260px;overflow:auto">
+            <sc-for list="{{ collegeResults }}" as="c" hint-placeholder-count="3">
+              <button type="button" onClick="{{ c.pick }}" style="width:100%;text-align:left;background:transparent;color:#e8f4f4;border:0;padding:10px 14px;display:grid;gap:2px" style-hover="background:#212121">
+                <b style="font-weight:600">{{ c.short }}</b>
+                <small style="color:#8aa0a6;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ c.sub }}</small>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </label>
+      <p style="margin:16px 0 0;color:#7e949b;font-size:13px">Demo only. Counts are illustrative. Live Pulse will replace them.</p>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isCampus }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Campus office" style="position:relative;z-index:1;width:min(1240px,calc(100% - 48px));margin:0 auto">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 8px">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#08a4b8">
+          <span style="width:18px;height:18px;border-radius:50%;border:1.5px solid #08a4b8;position:relative;display:inline-block"><span style="position:absolute;inset:4px;border-radius:50%;background:#08a4b8"></span></span>
+          Pulse
+        </div>
+        <div style="font-size:13px;color:#9e9e9e;padding:6px 10px"><b style="color:#fcfcfc">{{ campShort }}</b>
+          <sc-if value="{{ claimed }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#08a4b8;border:1px solid rgba(8,164,184,0.45);border-radius:999px;padding:4px 8px;margin-left:8px">Verified</span></sc-if>
+          <sc-if value="{{ notClaimed }}" hint-placeholder-val="{{ true }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#9e9e9e;border:1px solid #2a2a2a;border-radius:999px;padding:4px 8px;margin-left:8px">Guest</span></sc-if>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button type="button" onClick="{{ onFuel }}" title="Daily names. Aggregates are free. Seeing a name uses a look." style="display:flex;align-items:center;gap:8px;border:1px solid #2a2a2a;background:#141414;border-radius:999px;padding:6px 12px 6px 10px;color:#fcfcfc">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase">{{ fuelLabel }}</span>
+          <span style="display:flex;gap:4px">
+            <sc-for list="{{ fuelPips }}" as="p" hint-placeholder-count="3">
+              <i style="width:10px;height:10px;border-radius:50%;display:block;background:{{ p.bg }};box-shadow:{{ p.ring }}"></i>
+            </sc-for>
+          </span>
+          <b style="font-size:16px;letter-spacing:-0.03em">{{ looks }}</b>
+        </button>
+        <button type="button" onClick="{{ onInbox }}" style="border:1px solid {{ inboxBorder }};background:#141414;color:{{ inboxColor }};border-radius:999px;padding:6px 12px;font-size:13px">{{ inboxLabel }}</button>
+        <button type="button" onClick="{{ onToggleView }}" style="background:{{ reportBtnBg }};color:{{ reportBtnColor }};border:1px solid {{ reportBtnBorder }};border-radius:999px;padding:6px 12px;font-size:13px">{{ reportBtnLabel }}</button>
+        <button type="button" onClick="{{ onNextDay }}" title="Demo: advance a day" style="background:transparent;color:#fcfcfc;border:1px solid #2a2a2a;border-radius:999px;padding:6px 12px;font-size:13px">Next day</button>
+        <button type="button" onClick="{{ onReset }}" style="background:transparent;color:#fcfcfc;border:1px solid #2a2a2a;border-radius:999px;padding:6px 12px;font-size:13px">Reset demo</button>
+      </div>
+    </div>
+
+    <sc-if value="{{ showMomentum }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:12px;margin:8px 0 4px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6;white-space:nowrap">Campus momentum</span>
+        <div style="flex:1;height:6px;border-radius:99px;background:#1c3d46;overflow:hidden">
+          <div style="height:100%;background:linear-gradient(90deg,#08a4b8,#3ad6c9);border-radius:99px;transition:width 0.8s cubic-bezier(0.2,0.8,0.2,1);box-shadow:0 0 12px rgba(58,214,201,0.55);width:{{ momentumPct }}%"></div>
+        </div>
+        <b style="font-size:14px;letter-spacing:-0.02em;min-width:38px;text-align:right">{{ momentumPct }}%</b>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#3ad6c9;white-space:nowrap">{{ milestone }}</span>
+        <sc-if value="{{ flash }}" hint-placeholder-val="{{ false }}">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#062024;background:#3ad6c9;border-radius:999px;padding:2px 8px;animation:dropin 0.4s ease">{{ flash }}</span>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isRadarView }}" hint-placeholder-val="{{ true }}">
+    <div style="display:grid;gap:28px;padding:8px 0 96px;grid-template-columns:{{ gridCols }};align-items:{{ gridAlign }};justify-items:{{ gridJustify }}">
+      <div style="display:grid;place-items:center;align-content:start">
+        <div style="width:min(420px,90%);aspect-ratio:1;position:relative;border-radius:50%;background:repeating-radial-gradient(circle at 50% 50%, transparent 0 11.6%, rgba(255,255,255,0.05) 12% 12.3%),radial-gradient(circle at 50% 50%, #141414 0%, #050505 70%);box-shadow:0 0 0 1px #3f3f46;overflow:hidden">
+          <div style="position:absolute;inset:0;background:conic-gradient(from 0deg, transparent 0 74%, rgba(255,255,255,0.04) 88%, rgba(8,164,184,0.5) 100%);animation:sweep 3.4s linear infinite"></div>
+          <div style="position:absolute;left:50%;top:8%;bottom:8%;width:1px;background:rgba(255,255,255,0.08)"></div>
+          <div style="position:absolute;top:50%;left:8%;right:8%;height:1px;background:rgba(255,255,255,0.08)"></div>
+          <sc-for list="{{ radarCos }}" as="rc" hint-placeholder-count="0">
+            <button type="button" onClick="{{ rc.open }}" aria-label="{{ rc.label }}" style="position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;padding:0;border:0;background:transparent;z-index:5;left:{{ rc.left }}%;top:{{ rc.top }}%;opacity:{{ rc.opacity }}">
+              <span style="display:block;width:7px;height:7px;margin:7.5px auto;border-radius:50%;background:{{ rc.dotBg }};box-shadow:{{ rc.dotShadow }};transform:{{ rc.dotScale }}"></span>
+              <sc-if value="{{ rc.ping }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute;inset:2px;border-radius:50%;border:1.5px solid rgba(58,214,201,0.8);animation:pingring 1.4s ease-out;pointer-events:none;display:block"></span>
+                <span style="position:absolute;left:16px;top:-4px;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.04em;color:#3ad6c9;text-shadow:0 2px 8px rgba(0,0,0,0.9);animation:blip 1.5s ease-out both;pointer-events:none">{{ rc.pingLabel }}</span>
+              </sc-if>
+              <sc-if value="{{ rc.on }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute;inset:2px;border-radius:50%;border:1px solid rgba(8,164,184,0.55);animation:inspectring 1.8s ease-out infinite;pointer-events:none;display:block"></span>
+              </sc-if>
+            </button>
+          </sc-for>
+          <sc-for list="{{ echoes }}" as="ec" hint-placeholder-count="0">
+            <span style="position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#3ad6c9;box-shadow:0 0 8px rgba(58,214,201,0.7);left:{{ ec.left }}%;top:{{ ec.top }}%;animation:blip 1.5s ease-out both;animation-delay:{{ ec.delay }};pointer-events:none"></span>
+          </sc-for>
+          <sc-for list="{{ radarPeeps }}" as="rp" hint-placeholder-count="0">
+            <button type="button" onClick="{{ rp.open }}" aria-label="{{ rp.label }}" style="position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;padding:0;border:0;background:transparent;z-index:6;left:{{ rp.left }}%;top:{{ rp.top }}%;opacity:{{ rp.opacity }}">
+              <span style="display:block;width:8px;height:8px;margin:10px auto;border-radius:50%;background:{{ rp.dotBg }};box-shadow:{{ rp.dotShadow }};transform:{{ rp.dotScale }};opacity:{{ rp.dotOpacity }}"></span>
+              <sc-if value="{{ rp.on }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute;inset:6px;border-radius:50%;border:1px solid rgba(8,164,184,0.7);animation:inspectring 1.8s ease-out infinite;pointer-events:none;display:block"></span>
+              </sc-if>
+            </button>
+          </sc-for>
+          <div style="position:absolute;inset:42%;border-radius:50%;background:#0a2229;border:1px solid rgba(58,214,201,0.45);display:grid;place-items:center;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#08a4b8;z-index:3">{{ campInitials }}</div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px 10px;margin-top:16px;max-width:min(560px,100%)">
+          <sc-for list="{{ dock }}" as="dk" hint-placeholder-count="0">
+            <button type="button" onClick="{{ dk.open }}" title="{{ dk.title }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;background:{{ dk.bg }};border:1px solid {{ dk.border }};border-radius:6px;padding:4px 3px 2px;color:#c5d4d8">
+              <span style="position:relative;display:inline-grid;place-items:center;width:34px;height:34px;border-radius:8px;color:#fff;overflow:hidden;background:#fff;box-shadow:{{ dk.tileShadow }}">
+                <em style="font-style:normal;font-size:11px;font-weight:700;letter-spacing:-0.04em;width:100%;height:100%;display:grid;place-items:center;background:{{ dk.markBg }}">{{ dk.initials }}</em>
+                <img alt="" data-logo="{{ dk.logoDomain }}" decoding="async" referrerpolicy="no-referrer" onError="{{ hideImg }}" style="position:absolute;inset:5px;width:calc(100% - 10px);height:calc(100% - 10px);object-fit:contain;object-position:center;background:#fff">
+              </span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1;color:{{ dk.nColor }};letter-spacing:0.02em">{{ dk.n }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <p style="text-align:center;color:#8aa0a6;font-size:12px;margin:8px 0 0;font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em">{{ coCountLine }}</p>
+
+        <ol style="display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0;margin:14px 0 0;justify-content:center">
+          <sc-for list="{{ howSteps }}" as="hs" hint-placeholder-count="4">
+            <li style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;padding:6px 10px;border-radius:99px;color:{{ hs.color }};border:1px solid {{ hs.border }};background:{{ hs.bg }}">{{ hs.label }}</li>
+          </sc-for>
+        </ol>
+
+        <sc-if value="{{ hasPings }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px;width:min(440px,100%);display:grid;gap:4px">
+            <sc-for list="{{ pingFeed }}" as="pf" hint-placeholder-count="0">
+              <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8aa0a6;animation:tickin 0.4s ease;opacity:{{ pf.opacity }}">
+                <span style="width:6px;height:6px;border-radius:50%;background:#3ad6c9;box-shadow:0 0 8px rgba(58,214,201,0.7);flex-shrink:0"></span>
+                <span style="color:#cfe7e4">{{ pf.label }}</span>
+                <span style="margin-left:auto;color:#5c6e74">{{ pf.time }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ hasToday }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:18px;max-width:480px;align-items:center">
+            <span style="width:100%;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#9e9e9e">Today</span>
+            <sc-for list="{{ today }}" as="td" hint-placeholder-count="1">
+              <button type="button" onClick="{{ td.open }}" style="display:flex;align-items:center;gap:8px;background:#141414;border:1px solid {{ td.border }};border-radius:999px;padding:4px 12px 4px 4px;color:inherit;text-align:left">
+                <span style="display:inline-flex;align-items:center;gap:8px;background:#0e2a32;border-radius:999px;padding:4px"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ td.initials }}</i></span>
+                <span><b style="display:block;font-size:13px">{{ td.name }}</b><small style="display:block;color:#9e9e9e;font-size:11px">{{ td.sub }}</small></span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <p style="color:#8aa0a6;font-size:13px;margin:14px 0 0;text-align:center;max-width:46ch">{{ caption }}</p>
+      </div>
+
+      <sc-if value="{{ sideOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#141414;border:1px solid #212121;border-radius:16px;padding:22px 22px 18px;min-height:420px;max-height:calc(100vh - 88px);display:flex;flex-direction:column;overflow:auto;width:100%">
+
+        <sc-if value="{{ showCompany }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:48px 1fr auto;gap:14px;align-items:start;margin-bottom:18px">
+            <span style="position:relative;display:inline-grid;place-items:center;width:48px;height:48px;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,0.14)">
+              <em style="font-style:normal;font-size:11px;font-weight:700;width:100%;height:100%;display:grid;place-items:center;color:#fff;background:{{ cp.markBg }}">{{ cp.initials }}</em>
+              <img alt="" data-logo="{{ cp.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:7px;width:calc(100% - 14px);height:calc(100% - 14px);object-fit:contain;background:#fff">
+            </span>
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6;margin-bottom:8px">{{ cp.typeName }}</div>
+              <h2 style="font-size:28px;letter-spacing:-0.04em;margin:2px 0 4px">{{ cp.name }}</h2>
+              <p style="margin:0;color:#9e9e9e;font-size:14px">Where yours already sit</p>
+            </div>
+            <button type="button" onClick="{{ onCloseInspect }}" aria-label="Close" style="width:32px;height:32px;border:1px solid #2a2a2a;background:transparent;color:#9e9e9e;border-radius:999px;font-size:18px;line-height:1" style-hover="color:#fcfcfc">&times;</button>
+          </div>
+          <div style="background:#0e0e0e;border:1px solid #1c3d46;border-radius:14px;padding:16px 18px 14px;margin:0 0 14px">
+            <b style="display:block;font-size:52px;letter-spacing:-0.06em;line-height:0.95;color:#fcfcfc">{{ cp.n }}</b>
+            <em style="display:block;font-style:normal;font-size:15px;color:#c5d4d8;margin-top:6px">{{ cp.countLine }}</em>
+            <small style="display:block;color:#8aa0a6;font-size:12px;margin-top:6px">Public-profile counts, not verified names. Names only when they join Pulse.</small>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px">
+            <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px"><b style="display:block;font-size:22px;letter-spacing:-0.03em">{{ cp.topRoleN }}</b><span style="color:#9e9e9e;font-size:12px">{{ cp.topRoleLabel }}</span></div>
+            <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px"><b style="display:block;font-size:22px;letter-spacing:-0.03em">{{ cp.liveN }}</b><span style="color:#9e9e9e;font-size:12px">live roles now</span></div>
+            <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px"><b style="display:block;font-size:22px;letter-spacing:-0.03em">{{ cp.onPulseN }}</b><span style="color:#9e9e9e;font-size:12px">on Pulse</span></div>
+          </div>
+          <sc-if value="{{ cp.hasWho }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;gap:8px;margin:0 0 14px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6">Who you can ask &middot; on Pulse</div>
+              <sc-for list="{{ cp.who }}" as="w" hint-placeholder-count="2">
+                <button type="button" onClick="{{ w.open }}" style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;color:inherit;background:#0e0e0e;border:1px solid #1c3d46;border-radius:12px;padding:10px 12px" style-hover="border-color:#2f5b66">
+                  <span style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:4px"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ w.initials }}</i></span>
+                  <span><b style="display:block;font-size:14px">{{ w.display }}</b><small style="color:#8aa0a6;font-size:12px">{{ w.sub }}</small></span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#08a4b8">{{ w.go }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ cp.noWho }}" hint-placeholder-val="{{ false }}">
+            <p style="color:#9e9e9e;font-size:13px;margin:0 0 14px">{{ cp.noWhoLine }}</p>
+          </sc-if>
+          <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px 14px;margin:0 0 12px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6;margin-bottom:8px">Seats Pulse can count</div>
+            <sc-for list="{{ cp.roles }}" as="r" hint-placeholder-count="3">
+              <p style="margin:4px 0;font-size:14px">{{ r.role }} &middot; <b>{{ r.n }}</b></p>
+            </sc-for>
+            <small style="color:#9e9e9e;font-size:12px">{{ cp.briefLine }}</small>
+          </div>
+          <sc-if value="{{ cp.hasLive }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;gap:6px;margin:0 0 14px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6">Open now &middot; Pulse can see this</div>
+              <sc-for list="{{ cp.live }}" as="lj" hint-placeholder-count="1">
+                <button type="button" onClick="{{ lj.open }}" style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;width:100%;text-align:left;color:inherit;background:#0e0e0e;border:1px solid #1c3d46;border-radius:12px;padding:10px 12px" style-hover="border-color:#2f5b66">
+                  <span><b style="display:block;font-size:14px">{{ lj.title }}</b><small style="color:#8aa0a6;font-size:12px">{{ lj.sub }}</small></span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#08a4b8;border:1px solid rgba(8,164,184,0.45);border-radius:999px;padding:4px 8px;white-space:nowrap">{{ lj.badge }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+            <button type="button" onClick="{{ onInvite }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a">{{ cp.inviteLabel }}</button>
+            <button type="button" onClick="{{ onCloseInspect }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px">Back to radar</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showPerson }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:48px 1fr auto;gap:14px;align-items:start;margin-bottom:18px">
+            <span style="position:relative;display:inline-grid;place-items:center;width:48px;height:48px;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,0.14)">
+              <em style="font-style:normal;font-size:11px;font-weight:700;width:100%;height:100%;display:grid;place-items:center;color:#fff;background:{{ pp.markBg }}">{{ pp.coInitials }}</em>
+              <img alt="" data-logo="{{ pp.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:7px;width:calc(100% - 14px);height:calc(100% - 14px);object-fit:contain;background:#fff">
+            </span>
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6;margin-bottom:8px">{{ pp.why }}</div>
+              <h2 style="font-size:28px;letter-spacing:-0.04em;margin:2px 0 4px">{{ pp.company }}</h2>
+              <p style="margin:0;color:#9e9e9e;font-size:14px">{{ pp.roleCity }}</p>
+            </div>
+            <button type="button" onClick="{{ onCloseInspect }}" aria-label="Close" style="width:32px;height:32px;border:1px solid #2a2a2a;background:transparent;color:#9e9e9e;border-radius:999px;font-size:18px;line-height:1" style-hover="color:#fcfcfc">&times;</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px">
+            <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px"><b style="display:block;font-size:22px;letter-spacing:-0.03em">{{ pp.nAtCo }}</b><span style="color:#9e9e9e;font-size:12px">alumni here</span></div>
+            <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px"><b style="display:block;font-size:22px;letter-spacing:-0.03em">{{ pp.nAtRole }}</b><span style="color:#9e9e9e;font-size:12px">in this role</span></div>
+            <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px"><b style="display:block;font-size:22px;letter-spacing:-0.03em">{{ pp.posOfTotal }}</b><span style="color:#9e9e9e;font-size:12px">this company</span></div>
+          </div>
+
+          <sc-if value="{{ pp.showClaim }}" hint-placeholder-val="{{ false }}">
+            <p style="color:#9e9e9e;font-size:13px;margin:0 0 14px">Claim this placement office to see who this is &mdash; then ask them on Pulse.</p>
+            <div style="display:grid;gap:6px;margin-bottom:12px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8aa0a6">Your name</span>
+              <input type="text" placeholder="Placement officer" value="{{ profileName }}" onInput="{{ onProfileName }}" style="width:100%;background:#0e0e0e;color:#fcfcfc;border:1px solid #2a2a2a;border-radius:16px;padding:12px 16px;box-sizing:border-box">
+            </div>
+            <div style="display:grid;gap:6px;margin-bottom:12px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8aa0a6">Work email</span>
+              <input type="email" placeholder="{{ emailPlaceholder }}" value="{{ profileEmail }}" onInput="{{ onProfileEmail }}" style="width:100%;background:#0e0e0e;color:#fcfcfc;border:1px solid #2a2a2a;border-radius:16px;padding:12px 16px;box-sizing:border-box">
+            </div>
+            <button type="button" onClick="{{ onSubmitClaim }}" disabled="{{ claimDisabled }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%;margin-top:4px;opacity:{{ claimOpacity }}">Verify this office</button>
+            <p style="margin:10px 0 0;color:#636363;font-size:12px">Esc to keep looking without a name</p>
+          </sc-if>
+
+          <sc-if value="{{ pp.showAsk }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:1px solid #212121;border-radius:12px;margin-bottom:14px;background:#0e0e0e">
+              <span style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:4px"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ pp.initials }}</i></span>
+              <div>
+                <b style="display:block;font-size:16px">{{ pp.name }}</b>
+                <small style="display:block;color:#c5d4d8;font-size:13px">{{ pp.roleCity }}</small>
+                <small style="color:#9e9e9e;font-size:13px">{{ pp.deptYear }}</small>
+              </div>
+            </div>
+            <p style="color:#9e9e9e;font-size:13px;margin:0 0 14px">This is the message. Pulse delivers it &mdash; not your college inbox.</p>
+            <blockquote style="margin:0 0 14px;padding:12px 14px;border-left:3px solid #08a4b8;background:#0e0e0e;color:#d5e6ea;font-size:14px;line-height:1.5;white-space:pre-line">{{ pp.askNote }}</blockquote>
+            <button type="button" onClick="{{ onSendAsk }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%">Send with Pulse</button>
+            <button type="button" onClick="{{ onCloseAsk }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;width:100%;margin-top:8px">Keep looking</button>
+          </sc-if>
+
+          <sc-if value="{{ pp.showSealed }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ onReveal }}" aria-label="Name sealed. Seat is visible." style="display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:1px solid #212121;border-radius:12px;margin-bottom:14px;background:#0e0e0e;color:inherit;text-align:left" style-hover="border-color:rgba(8,164,184,0.5)">
+              <span aria-hidden="true" style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:4px;filter:blur(7px)"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ pp.initials }}</i></span>
+              <div>
+                <b aria-hidden="true" style="display:block;font-size:16px;filter:blur(7px);user-select:none">{{ pp.name }}</b>
+                <small style="display:block;color:#c5d4d8;font-size:13px">{{ pp.roleCity }}</small>
+                <small style="color:#9e9e9e;font-size:13px">{{ pp.deptYearPulse }}</small>
+              </div>
+            </button>
+            <div style="background:rgba(8,164,184,0.1);border:1px solid rgba(8,164,184,0.45);border-radius:14px;padding:12px 14px 14px;margin:0 0 14px">
+              <p style="margin:0 0 10px;font-size:13px;color:#c5d4d8">You can already see the seat. Reveal the name, then Pulse opens the message.</p>
+              <button type="button" onClick="{{ onReveal }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%">{{ pp.revealLabel }}</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ pp.showOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:1px solid #212121;border-radius:12px;margin-bottom:14px;background:#0e0e0e">
+              <span style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:4px"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ pp.initials }}</i></span>
+              <div>
+                <b style="display:block;font-size:16px">{{ pp.name }}</b>
+                <small style="display:block;color:#c5d4d8;font-size:13px">{{ pp.roleCity }}</small>
+                <small style="color:#9e9e9e;font-size:13px">{{ pp.deptYear }}</small>
+              </div>
+            </div>
+            <sc-if value="{{ pp.canAsk }}" hint-placeholder-val="{{ false }}">
+              <div style="background:rgba(8,164,184,0.1);border:1px solid rgba(8,164,184,0.45);border-radius:14px;padding:12px 14px 14px;margin:0 0 14px">
+                <p style="margin:0 0 10px;font-size:13px;color:#c5d4d8">{{ pp.askPrompt }}</p>
+                <button type="button" onClick="{{ onOpenAsk }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%">{{ pp.askLabel }}</button>
+              </div>
+            </sc-if>
+            <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px 14px;margin:0 0 12px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6;margin-bottom:8px">How they hire yours</div>
+              <p style="margin:4px 0;font-size:14px">{{ pp.seatLine }}</p>
+              <small style="color:#9e9e9e;font-size:12px">{{ pp.seatSub }}</small>
+            </div>
+            <sc-if value="{{ pp.statusLine }}" hint-placeholder-val="{{ false }}">
+              <p style="color:#3dd68c;font-size:13px;margin:0 0 14px">{{ pp.statusLine }}</p>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ pp.hasLive }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;gap:6px;margin:0 0 14px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6">Open now &middot; Pulse can see this</div>
+              <sc-for list="{{ pp.live }}" as="lj" hint-placeholder-count="1">
+                <button type="button" onClick="{{ lj.open }}" style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;width:100%;text-align:left;color:inherit;background:#0e0e0e;border:1px solid #1c3d46;border-radius:12px;padding:10px 12px" style-hover="border-color:#2f5b66">
+                  <span><b style="display:block;font-size:14px">{{ lj.title }}</b><small style="color:#8aa0a6;font-size:12px">{{ lj.sub }}</small></span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#08a4b8;border:1px solid rgba(8,164,184,0.45);border-radius:999px;padding:4px 8px;white-space:nowrap">{{ lj.badge }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ pp.showNav }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:16px">
+              <button type="button" onClick="{{ onPrev }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px">&larr; Previous</button>
+              <span style="color:#9e9e9e;font-size:12px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;text-transform:uppercase">Same company</span>
+              <button type="button" onClick="{{ onNext }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px">Next &rarr;</button>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ showJobs }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;margin-bottom:16px">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6;margin-bottom:8px">{{ jobsKicker }}</div>
+              <h2 style="font-size:28px;letter-spacing:-0.04em;margin:2px 0 4px">Open now</h2>
+              <p style="margin:0;color:#9e9e9e;font-size:14px">Roles Pulse can see. Affinity is which of yours already sit there.</p>
+            </div>
+            <button type="button" onClick="{{ onCloseJobs }}" aria-label="Close" style="width:32px;height:32px;border:1px solid #2a2a2a;background:transparent;color:#9e9e9e;border-radius:999px;font-size:18px;line-height:1" style-hover="color:#fcfcfc">&times;</button>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:stretch;gap:10px;margin:0 0 12px">
+            <div style="display:flex;background:#0e0e0e;padding:4px;border-radius:999px;border:1px solid #212121;align-self:start">
+              <button type="button" onClick="{{ onStreamEng }}" style="border:0;padding:8px 16px;border-radius:999px;font-weight:500;background:{{ engTabBg }};color:{{ engTabColor }}">Engineering</button>
+              <button type="button" onClick="{{ onStreamIt }}" style="border:0;padding:8px 16px;border-radius:999px;font-weight:500;background:{{ itTabBg }};color:{{ itTabColor }}">IT</button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <button type="button" onClick="{{ onToggleAlumni }}" style="border:1px solid {{ alumniChipBorder }};background:{{ alumniChipBg }};border-radius:999px;padding:7px 12px;color:{{ alumniChipColor }};font-size:13px">Alumni work here</button>
+            </div>
+          </div>
+          <sc-if value="{{ jobCompany }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ onClearJobCompany }}" style="width:100%;margin:0 0 10px;background:rgba(8,164,184,0.1);border:1px solid rgba(8,164,184,0.35);color:#e8f4f4;border-radius:999px;padding:7px 12px;font-size:13px">{{ jobCompanyLine }}</button>
+          </sc-if>
+          <div style="display:grid;gap:8px;overflow:auto;max-height:min(52vh,520px);padding-right:2px">
+            <sc-for list="{{ jobs }}" as="j" hint-placeholder-count="3">
+              <div style="display:grid;gap:8px;width:100%;text-align:left;background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px">
+                <div style="display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:start">
+                  <span style="position:relative;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;overflow:hidden;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,0.14)">
+                    <em style="font-style:normal;font-size:11px;font-weight:700;width:100%;height:100%;display:grid;place-items:center;color:#fff;background:{{ j.markBg }}">{{ j.initials }}</em>
+                    <img alt="" data-logo="{{ j.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);object-fit:contain;background:#fff">
+                  </span>
+                  <div>
+                    <h3 style="margin:0;font-size:16px;letter-spacing:-0.03em">{{ j.title }}</h3>
+                    <div style="color:#9e9e9e;font-size:13px;font-weight:500">{{ j.coLine }}</div>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#08a4b8;border:1px solid rgba(8,164,184,0.45);border-radius:999px;padding:4px 8px;white-space:nowrap">Open now</span>
+                </div>
+                <div style="justify-self:start;background:{{ j.badgeBg }};color:{{ j.badgeColor }};border:1px solid {{ j.badgeBorder }};border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600">{{ j.badge }}</div>
+                <div style="font-size:13px;color:#c5d4d8;display:flex;gap:14px;flex-wrap:wrap"><span>{{ j.ctc }}</span><span>{{ j.exp }}</span><span>{{ j.eligibility }}</span></div>
+                <p style="margin:0;color:#8aa0a6;font-size:13px">{{ j.note }}</p>
+                <div style="display:flex;gap:8px">
+                  <button type="button" onClick="{{ j.match }}" style="border:0;border-radius:999px;padding:8px 14px;font-weight:550;font-size:13px;background:#fff;color:#0a0a0a">Match my 2027</button>
+                  <button type="button" onClick="{{ j.copyBrief }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:8px 14px;font-weight:550;font-size:13px">Copy brief</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isReportView }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Campus report" style="padding:8px 0 110px">
+      <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:end;margin:8px 0 18px">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#3ad6c9;margin-bottom:6px">Campus report &middot; Day {{ day }}</div>
+          <h1 style="font-size:clamp(32px,4.5vw,48px);letter-spacing:-0.045em;margin:0;line-height:0.95">{{ campShort }}, placed.</h1>
+          <p style="margin:8px 0 0;color:#9e9e9e;max-width:46ch">Where your students land, what the seats pay, and what moved this week. Updates itself &mdash; no Excel.</p>
+        </div>
+        <button type="button" onClick="{{ onCopyPrincipal }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a">Copy principal brief</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 28px">
+        <sc-for list="{{ reportStats }}" as="rs" hint-placeholder-count="4">
+          <div style="background:{{ rs.bg }};border:1px solid {{ rs.border }};border-radius:16px;padding:16px 18px">
+            <div style="font-size:32px;letter-spacing:-0.04em;font-weight:600">{{ rs.n }}</div>
+            <div style="color:#9e9e9e;font-size:13px;margin-top:4px">{{ rs.l }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:8px 0 14px">
+        <h2 style="font-size:22px;margin:0;letter-spacing:-0.03em">Where they went</h2>
+        <p style="margin:0;color:#9e9e9e;font-size:14px">By employer type.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin:0 0 28px">
+        <sc-for list="{{ mixCards }}" as="mx" hint-placeholder-count="7">
+          <div style="background:#141414;border:1px solid #212121;border-radius:16px;padding:14px 12px 12px;min-height:148px;display:flex;flex-direction:column;justify-content:space-between">
+            <div>
+              <div style="font-size:28px;letter-spacing:-0.04em">{{ mx.pct }}%</div>
+              <div style="height:4px;border-radius:99px;background:#212121;margin:10px 0 12px;overflow:hidden"><i style="display:block;height:100%;background:{{ mx.barColor }};width:{{ mx.pct }}%"></i></div>
+            </div>
+            <div style="font-weight:600;font-size:13px;line-height:1.25">{{ mx.name }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:8px 0 14px">
+        <h2 style="font-size:22px;margin:0;letter-spacing:-0.03em">Typical CTC by sector</h2>
+        <p style="margin:0;color:#9e9e9e;font-size:14px">From live roles Pulse can see. Bands, not offers.</p>
+      </div>
+      <sc-if value="{{ proOn }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;gap:10px;margin:0 0 28px">
+          <sc-for list="{{ ctcBands }}" as="cb" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:220px 1fr auto;gap:14px;align-items:center;background:#141414;border:1px solid #212121;border-radius:12px;padding:12px 14px">
+              <b style="font-size:14px">{{ cb.name }}</b>
+              <div style="height:8px;border-radius:99px;background:#1c3d46;overflow:hidden"><i style="display:block;height:100%;background:linear-gradient(90deg,#08a4b8,#3ad6c9);width:{{ cb.width }}%"></i></div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#3ad6c9;white-space:nowrap">{{ cb.band }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ proOff }}" hint-placeholder-val="{{ false }}">
+        <div style="position:relative;border:1px solid #212121;border-radius:16px;padding:18px;overflow:hidden;margin:0 0 28px">
+          <div style="filter:blur(7px);user-select:none;display:grid;gap:10px" aria-hidden="true">
+            <div style="display:grid;grid-template-columns:220px 1fr auto;gap:14px;align-items:center"><b>IT product &amp; services</b><div style="height:8px;border-radius:99px;background:#1c3d46"><i style="display:block;height:100%;width:70%;background:#08a4b8"></i></div><span>10&ndash;18 LPA</span></div>
+            <div style="display:grid;grid-template-columns:220px 1fr auto;gap:14px;align-items:center"><b>Semiconductor</b><div style="height:8px;border-radius:99px;background:#1c3d46"><i style="display:block;height:100%;width:60%;background:#08a4b8"></i></div><span>12&ndash;18 LPA</span></div>
+            <div style="display:grid;grid-template-columns:220px 1fr auto;gap:14px;align-items:center"><b>Automotive</b><div style="height:8px;border-radius:99px;background:#1c3d46"><i style="display:block;height:100%;width:40%;background:#08a4b8"></i></div><span>6&ndash;10 LPA</span></div>
+          </div>
+          <div style="position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,0.35)">
+            <button type="button" onClick="{{ onOpenPro }}" style="border:0;border-radius:999px;padding:11px 20px;font-weight:550;font-size:14px;background:#3ad6c9;color:#062024">PRO &middot; Unlock CTC bands</button>
+          </div>
+        </div>
+      </sc-if>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:8px 0 14px">
+        <h2 style="font-size:22px;margin:0;letter-spacing:-0.03em">Moved this week</h2>
+        <p style="margin:0;color:#9e9e9e;font-size:14px">Demo deltas &mdash; live Pulse replaces these.</p>
+      </div>
+      <sc-if value="{{ proOn }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 28px">
+          <sc-for list="{{ weekDeltas }}" as="wd" hint-placeholder-count="4">
+            <span style="background:#181818;border:1px solid #2a2a2a;border-radius:999px;padding:6px 12px;font-size:13px"><b style="color:#3ad6c9;font-family:'IBM Plex Mono',monospace;font-size:12px">{{ wd.delta }}</b> {{ wd.label }}</span>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ proOff }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 28px;align-items:center">
+          <span style="filter:blur(6px);user-select:none;background:#181818;border:1px solid #2a2a2a;border-radius:999px;padding:6px 12px;font-size:13px" aria-hidden="true">+3 counts at Bosch</span>
+          <span style="filter:blur(6px);user-select:none;background:#181818;border:1px solid #2a2a2a;border-radius:999px;padding:6px 12px;font-size:13px" aria-hidden="true">+2 on Pulse at Zoho</span>
+          <button type="button" onClick="{{ onOpenPro }}" style="border:1px solid rgba(58,214,201,0.5);background:transparent;border-radius:999px;padding:6px 12px;font-size:13px;color:#3ad6c9">PRO &middot; Unlock weekly movement</button>
+        </div>
+      </sc-if>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:8px 0 14px">
+        <h2 style="font-size:22px;margin:0;letter-spacing:-0.03em">Cities with a visible cluster</h2>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 28px">
+        <sc-for list="{{ reportCities }}" as="rc2" hint-placeholder-count="5">
+          <span style="background:#181818;border:1px solid #2a2a2a;border-radius:999px;padding:6px 10px;font-size:13px">{{ rc2.name }}</span>
+        </sc-for>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:8px 0 14px">
+        <h2 style="font-size:22px;margin:0;letter-spacing:-0.03em">Four lines for the principal</h2>
+        <p style="margin:0;color:#9e9e9e;font-size:14px">You approve. Nothing sends itself.</p>
+      </div>
+      <blockquote style="margin:0 0 12px;padding:16px 18px;border-left:3px solid #08a4b8;background:#0e2a32;color:#d5e6ea;font-size:15px;line-height:1.5;white-space:pre-line">{{ principalBrief }}</blockquote>
+    </div>
+    </sc-if>
+  </div>
+
+  <div data-screen-label="Market tape" style="position:fixed;left:0;right:0;bottom:0;z-index:15;background:#0a0a0a;border-top:1px solid #212121;display:flex;align-items:stretch">
+    <div style="display:flex;align-items:center;gap:6px;padding:10px 14px;border-right:1px solid #212121;flex-shrink:0;background:#0a0a0a">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#8aa0a6;margin-right:4px">Market</span>
+      <sc-for list="{{ tapeChips }}" as="tc" hint-placeholder-count="0">
+        <button type="button" onClick="{{ tc.click }}" style="display:flex;align-items:center;gap:5px;border:1px solid {{ tc.border }};background:{{ tc.bg }};color:{{ tc.color }};border-radius:999px;padding:4px 10px;font-size:11px">
+          {{ tc.label }}
+          <sc-if value="{{ tc.lock }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:0.1em;color:#062024;background:#3ad6c9;border-radius:4px;padding:1px 4px">PRO</span></sc-if>
+        </button>
+      </sc-for>
+    </div>
+    <div style="flex:1;overflow:hidden;position:relative;display:flex;align-items:center">
+      <div style="display:flex;gap:24px;width:max-content;align-items:center;padding:8px 16px;animation:tape {{ tapeDur }} linear infinite" style-hover="animation-play-state:paused">
+        <sc-for list="{{ tapeItems }}" as="ti" hint-placeholder-count="0">
+          <button type="button" onClick="{{ ti.open }}" style="display:flex;align-items:center;gap:8px;white-space:nowrap;padding:3px 10px;border-radius:8px;border:1px solid {{ ti.border }};background:{{ ti.bg }};color:inherit;text-align:left" style-hover="border-color:#3f3f46">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:{{ ti.symColor }}">{{ ti.symbol }}</span>
+            <b style="font-size:12px;letter-spacing:-0.02em">{{ ti.title }}</b>
+            <span style="color:#8aa0a6;font-size:11px">{{ ti.city }}</span>
+            <span style="color:#3ad6c9;font-size:11px;font-family:'IBM Plex Mono',monospace">{{ ti.ctc }}</span>
+            <span style="color:#5c6e74;font-size:10px;font-family:'IBM Plex Mono',monospace">{{ ti.posted }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;color:{{ ti.srcColor }};border:1px solid #212121;border-radius:4px;padding:1px 5px">{{ ti.src }}</span>
+            <sc-if value="{{ ti.warm }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.1em;color:#062024;background:#3ad6c9;border-radius:4px;padding:1px 5px;box-shadow:0 0 10px rgba(58,214,201,0.6)">{{ ti.warmLabel }}</span></sc-if>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ showMatch }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseMatch }}" style="position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:20;display:grid;place-items:center;padding:24px">
+      <div onClick="{{ stop }}" role="dialog" style="width:min(520px,100%);background:#141414;color:#fcfcfc;border-radius:16px;padding:28px;border:1px solid #212121;text-align:left">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#08a4b8;margin-bottom:8px">Pulse match &middot; not auto-apply</div>
+        <h3 style="margin:0 0 8px;letter-spacing:-0.03em">{{ mj.headline }}</h3>
+        <sc-if value="{{ mj.needSheet }}" hint-placeholder-val="{{ false }}">
+          <p style="color:#9bb0b6;margin:0 0 16px">Upload your 2027 student sheet once and Pulse matches every live role against it &mdash; branch, skills, consent. Your data stays this office&rsquo;s.</p>
+          <div style="border:1px dashed #3f3f46;border-radius:12px;padding:22px;text-align:center;color:#8aa0a6;font-size:13px;margin:0 0 16px">Drop a CSV / Excel of the 2027 batch here<br>(demo: load a sample sheet below)</div>
+          <div style="display:flex;gap:10px">
+            <button type="button" onClick="{{ mj.loadDemo }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a">Load demo sheet</button>
+            <button type="button" onClick="{{ onCloseMatch }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px">Not now</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ mj.hasSheet }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#0e0e0e;border:1px solid #1c3d46;border-radius:14px;padding:16px 18px 14px;margin:0 0 14px">
+            <b style="display:block;font-size:44px;letter-spacing:-0.06em;line-height:0.95">{{ mj.matched }}</b>
+            <em style="display:block;font-style:normal;font-size:14px;color:#c5d4d8;margin-top:6px">of your 2027 match this seat</em>
+            <small style="display:block;color:#8aa0a6;font-size:12px;margin-top:6px">{{ mj.matchNote }}</small>
+          </div>
+          <div style="display:grid;gap:6px;margin:0 0 14px">
+            <sc-for list="{{ mj.sample }}" as="ms" hint-placeholder-count="0">
+              <div style="display:flex;align-items:center;gap:10px;border:1px solid #212121;border-radius:12px;padding:8px 12px">
+                <span style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:3px"><i style="width:22px;height:22px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:9px;font-weight:700">{{ ms.initials }}</i></span>
+                <span style="font-size:13px"><b>{{ ms.name }}</b> <span style="color:#8aa0a6">&middot; {{ ms.dept }} &middot; 2027</span></span>
+              </div>
+            </sc-for>
+          </div>
+          <blockquote style="margin:0 0 14px;padding:12px 14px;border-left:3px solid #08a4b8;background:#0e0e0e;color:#d5e6ea;font-size:13px;line-height:1.5">{{ mj.brief }}</blockquote>
+          <div style="display:flex;gap:10px">
+            <button type="button" onClick="{{ mj.copyBrief }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a">Copy brief for the batch</button>
+            <button type="button" onClick="{{ onCloseMatch }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px">Close</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showPro }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseOverlay }}" style="position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:20;display:grid;place-items:center;padding:24px">
+      <div onClick="{{ stop }}" role="dialog" style="width:min(480px,100%);background:#141414;color:#fcfcfc;border-radius:16px;padding:28px;border:1px solid rgba(58,214,201,0.35);text-align:left">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3ad6c9;margin-bottom:8px">Pulse Pro</div>
+        <h3 style="margin:0 0 8px;letter-spacing:-0.03em">Cut the tape to what matters.</h3>
+        <p style="color:#9bb0b6;margin:0 0 16px">The market tape scrolls every role Pulse can see &mdash; free, always. Pro filters it to your campus: only your branches, only warm paths where alumni already sit, only today&rsquo;s drops.</p>
+        <div style="display:grid;gap:8px;margin:0 0 20px">
+          <div style="display:flex;gap:10px;align-items:center;border:1px solid #212121;border-radius:12px;padding:10px 12px"><span style="width:8px;height:8px;border-radius:50%;background:#3ad6c9;flex-shrink:0"></span><span style="font-size:14px"><b>My branches</b> &mdash; roles matching this campus&rsquo;s departments</span></div>
+          <div style="display:flex;gap:10px;align-items:center;border:1px solid #212121;border-radius:12px;padding:10px 12px"><span style="width:8px;height:8px;border-radius:50%;background:#3ad6c9;flex-shrink:0"></span><span style="font-size:14px"><b>Warm paths</b> &mdash; only where your alumni already work</span></div>
+          <div style="display:flex;gap:10px;align-items:center;border:1px solid #212121;border-radius:12px;padding:10px 12px"><span style="width:8px;height:8px;border-radius:50%;background:#3ad6c9;flex-shrink:0"></span><span style="font-size:14px"><b>Today</b> &mdash; fresh drops only, every morning</span></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button type="button" onClick="{{ onUnlockPro }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a">Unlock Pro (demo)</button>
+          <button type="button" onClick="{{ onCloseOverlay }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px">Not now</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showInboxOverlay }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseOverlay }}" style="position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:20;display:grid;place-items:center;padding:24px">
+      <div onClick="{{ stop }}" role="dialog" style="width:min(520px,100%);background:#141414;color:#fcfcfc;border-radius:16px;padding:28px;border:1px solid #212121;text-align:left">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#08a4b8;margin-bottom:8px">Inbox &middot; stays after midnight</div>
+        <h3 style="margin:0 0 8px;letter-spacing:-0.03em">{{ inboxTitle }}</h3>
+        <sc-if value="{{ hasThread }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ onBackThread }}" style="background:transparent;color:#9e9e9e;border:0;padding:0;font-size:13px;text-align:left;margin:0 0 12px">&larr; All asks</button>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #212121;border-radius:12px;background:#0e0e0e;margin:0 0 12px">
+            <span style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:4px"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ thread.initials }}</i></span>
+            <div><b style="display:block;font-size:15px">{{ thread.name }}</b><small style="color:#9e9e9e;font-size:12px">{{ thread.sub }}</small></div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#8aa0a6;margin:0 0 6px">You &middot; day {{ thread.askedDay }}</div>
+          <blockquote style="margin:0 0 14px;padding:12px 14px;border-left:3px solid #2a2a2a;background:#0e0e0e;color:#c5d4d8;font-size:13px;line-height:1.5;white-space:pre-line">{{ thread.askText }}</blockquote>
+          <sc-if value="{{ thread.replied }}" hint-placeholder-val="{{ false }}">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#3ad6c9;margin:0 0 6px">{{ thread.firstName }} &middot; day {{ thread.replyDay }}</div>
+            <blockquote style="margin:0 0 14px;padding:12px 14px;border-left:3px solid #08a4b8;background:#0e2a32;color:#d5e6ea;font-size:14px;line-height:1.5">{{ thread.reply }}</blockquote>
+            <p style="color:#9e9e9e;font-size:13px;margin:0 0 12px">They asked for two profiles. That is the next move &mdash; your students, your pick.</p>
+            <button type="button" onClick="{{ thread.onSendProfiles }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%">Send 2 profiles (demo)</button>
+          </sc-if>
+          <sc-if value="{{ thread.waiting }}" hint-placeholder-val="{{ false }}">
+            <p style="color:#9e9e9e;font-size:13px;margin:0 0 12px">Pulse delivered. They choose whether to answer &mdash; most replies land within a day.</p>
+            <button type="button" onClick="{{ thread.onNudge }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;width:100%">{{ thread.nudgeLabel }}</button>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{ hasInbox }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;gap:8px;margin:14px 0 0">
+            <sc-for list="{{ inbox }}" as="ib" hint-placeholder-count="1">
+              <button type="button" onClick="{{ ib.open }}" style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:center;width:100%;text-align:left;background:#0e2a32;border:1px solid #1c3d46;color:#e8f4f4;border-radius:14px;padding:10px 12px" style-hover="border-color:rgba(58,214,201,0.45)">
+                <span style="position:relative;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:6px;overflow:hidden;background:#fff">
+                  <em style="font-style:normal;font-size:11px;font-weight:700;width:100%;height:100%;display:grid;place-items:center;color:#fff;background:{{ ib.markBg }}">{{ ib.initials }}</em>
+                  <img alt="" data-logo="{{ ib.logoDomain }}" onError="{{ hideImg }}" style="position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);object-fit:contain;background:#fff">
+                </span>
+                <span>
+                  <b>{{ ib.name }}</b>
+                  <small style="display:block;color:#8aa0a6">{{ ib.sub }}</small>
+                  <sc-if value="{{ ib.reply }}" hint-placeholder-val="{{ false }}"><small style="display:block;color:#8aa0a6">{{ ib.reply }}</small></sc-if>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noInbox }}" hint-placeholder-val="{{ false }}">
+          <p style="color:#9e9e9e;font-size:13px;margin:0">Nothing yet. Ask someone on Pulse &mdash; replies land here, not on LinkedIn.</p>
+        </sc-if>
+        <div style="display:flex;gap:10px;margin:16px 0 0">
+          <button type="button" onClick="{{ onCloseOverlay }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px">Close</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showDrop }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:20;display:grid;place-items:center;padding:24px">
+      <div role="dialog" style="width:min(560px,100%);background:#0c1c22;color:#e8f4f4;border-radius:16px;padding:40px 40px 32px;text-align:center;border:1px solid #1c3d46;box-shadow:0 24px 60px rgba(0,0,0,0.45)">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#08a4b8;margin-bottom:8px">Daily drop</div>
+        <div style="font-size:clamp(64px,10vw,110px);font-weight:800;letter-spacing:-0.06em;line-height:0.85">Day {{ day }}</div>
+        <div style="display:flex;justify-content:center;gap:14px;margin:26px 0 18px">
+          <span style="width:26px;height:26px;border-radius:50%;background:#3ad6c9;box-shadow:0 0 18px rgba(58,214,201,0.8);animation:dropin 0.6s cubic-bezier(0.2,0.8,0.2,1) both;animation-delay:0.15s"></span>
+          <span style="width:26px;height:26px;border-radius:50%;background:#3ad6c9;box-shadow:0 0 18px rgba(58,214,201,0.8);animation:dropin 0.6s cubic-bezier(0.2,0.8,0.2,1) both;animation-delay:0.4s"></span>
+          <span style="width:26px;height:26px;border-radius:50%;background:#3ad6c9;box-shadow:0 0 18px rgba(58,214,201,0.8);animation:dropin 0.6s cubic-bezier(0.2,0.8,0.2,1) both;animation-delay:0.65s"></span>
+        </div>
+        <h2 style="font-size:28px;letter-spacing:-0.04em;margin:0 0 10px">{{ dropHeadline }}</h2>
+        <p style="color:#9bb0b6;max-width:46ch;margin:0 auto 16px">{{ dropLine }}</p>
+        <div style="display:flex;justify-content:center;gap:8px;margin:0 0 18px;flex-wrap:wrap">
+          <sc-for list="{{ dropStats }}" as="ds" hint-placeholder-count="0">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.06em;color:#cfe7e4;border:1px solid #1c3d46;border-radius:999px;padding:5px 11px;animation:dropin 0.5s ease both;animation-delay:{{ ds.delay }}">{{ ds.label }}</span>
+          </sc-for>
+        </div>
+        <button type="button" onClick="{{ onCloseOverlay }}" style="border:0;border-radius:999px;padding:11px 22px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a">Open the office</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:20;display:grid;place-items:center;padding:24px">
+      <div role="dialog" style="width:min(640px,100%);background:#0c1c22;color:#e8f4f4;border-radius:8px;padding:40px 40px 32px;text-align:center;border:1px solid #5a2a24;box-shadow:0 24px 60px rgba(0,0,0,0.45)">
+        <div style="font-size:clamp(80px,14vw,140px);font-weight:800;letter-spacing:-0.08em;line-height:0.8;color:#f6e7e2">0</div>
+        <h2 style="font-size:32px;letter-spacing:-0.04em;margin:12px 0 10px">Names left today.</h2>
+        <p style="color:#9bb0b6;max-width:46ch;margin:0 auto 16px">{{ emptyLine }}</p>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button type="button" onClick="{{ onCloseOverlay }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a">See today</button>
+          <button type="button" onClick="{{ onNextDay }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px">Next day (demo)</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#fff;color:#0a0a0a;padding:12px 16px;border-radius:999px;z-index:30;font-size:14px">{{ toast }}</div>
+  </sc-if>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;pings&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Gamification&quot;}, &quot;showMomentum&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Gamification&quot;}, &quot;looksPerDay&quot;: {&quot;editor&quot;: &quot;int&quot;, &quot;default&quot;: 3, &quot;min&quot;: 1, &quot;max&quot;: 6, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Economy&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.STORAGE = "pulse-campus:dc:v1";
+    this.state = this.loadState();
+    this._empCache = {};
+  }
+  defaults() {
+    return {
+      scene: "landing", collegeId: null, query: "", searchOpen: false,
+      claimed: false, claimStep: null, profile: { name: "", email: "", role: "Placement Head" },
+      looks: 3, day: 1, onPulse: [], unlocked: [], today: [], inbox: [],
+      inspectCompany: null, inspectName: null, inspectRole: null, inspectIndex: 0,
+      askOpen: false, jobsOpen: false, jobCompany: null, jobStream: "engineering",
+      japanOnly: false, alumniOnly: true,
+      overlay: null, toast: "",
+      pro: false, tapeWarm: false, tapeBranch: false, tapeToday: false,
+      view: "radar", inboxOpenKey: null, sheetUploaded: false, matchJobId: null, joined: 0, nudged: [],
+      m: { visits: [], reveals: 0, asks: 0, replies: 0, invites: 0 },
+      pings: [], pingNow: null, flash: ""
+    };
+  }
+  loadState() {
+    try {
+      const raw = localStorage.getItem("pulse-campus:dc:v1");
+      if (!raw) return this.defaults();
+      const parsed = JSON.parse(raw);
+      return { ...this.defaults(), ...parsed, searchOpen: false, overlay: null, toast: "", askOpen: false, pingNow: null, flash: "" };
+    } catch (e) { return this.defaults(); }
+  }
+  persist() {
+    const c = { ...this.state, searchOpen: false, overlay: null, toast: "", pingNow: null, flash: "" };
+    try { localStorage.setItem(this.STORAGE, JSON.stringify(c)); } catch (e) {}
+  }
+  set(patch, cb) { this.setState(patch, () => { this.persist(); if (cb) cb(); }); }
+  ready() { return !!(window.PULSE_CAMPUS && window.buildEmployment && window.companyMark); }
+  college() { return this.ready() && this.state.collegeId ? window.PULSE_CAMPUS.colleges.find(c => c.id === this.state.collegeId) : null; }
+  emp() {
+    const id = this.state.collegeId;
+    if (!id) return null;
+    if (!this._empCache[id]) this._empCache[id] = window.buildEmployment(this.college());
+    return this._empCache[id];
+  }
+  looksMax() { return Math.max(1, Math.min(6, this.props.looksPerDay ?? 3)); }
+  componentDidMount() {
+    this._poll = setInterval(() => { if (this.ready()) { clearInterval(this._poll); this.seedPulse(); this.forceUpdate(); } }, 120);
+    this._pinger = setInterval(() => this.firePing(), 5200);
+  }
+  componentWillUnmount() { clearInterval(this._poll); clearInterval(this._pinger); clearTimeout(this._pingClear); clearTimeout(this._toastT); clearTimeout(this._flashT); }
+  seedPulse() {
+    if (!this.state.collegeId || this.state.onPulse.length) return;
+    const keys = [];
+    this.emp().companies.slice(0, 6).forEach((co, i) => {
+      (co.people || []).slice(0, i < 3 ? 2 : 1).forEach(p => { if (p.key) keys.push(p.key); });
+    });
+    if (keys.length) this.set({ onPulse: keys });
+  }
+  pulsePeople(company) {
+    const co = this.emp() && this.emp().companies.find(c => c.name === company);
+    return co ? co.people.filter(p => this.state.onPulse.includes(p.key)) : [];
+  }
+  inspectPerson() {
+    const s = this.state;
+    if (!s.inspectCompany || !s.inspectName) return null;
+    const list = this.pulsePeople(s.inspectCompany);
+    if (!list.length) return null;
+    return list.find(p => p.name === s.inspectName && (!s.inspectRole || p.role === s.inspectRole)) || list[Math.max(0, Math.min(s.inspectIndex, list.length - 1))] || null;
+  }
+  personKey(p) { return "n:" + p.company + "|" + p.role + "|" + p.name; }
+  isOpen(p) { return !!p && this.state.unlocked.includes(this.personKey(p)); }
+  gain(kind, amount) {
+    const m = { ...this.state.m };
+    if (kind === "visit") { if (m.visits.includes(amount)) return; m.visits = [...m.visits, amount]; }
+    else m[kind] = (m[kind] || 0) + 1;
+    const before = this.momentumPct(this.state.m), after = this.momentumPct(m);
+    const delta = after - before;
+    this.set({ m, flash: delta > 0 ? "+" + delta + " momentum" : "" });
+    clearTimeout(this._flashT);
+    this._flashT = setTimeout(() => this.set({ flash: "" }), 1600);
+  }
+  momentumPct(m) {
+    return Math.min(100, m.visits.length * 3 + m.reveals * 10 + m.asks * 14 + m.replies * 20 + m.invites * 8);
+  }
+  firePing() {
+    if (!this.ready() || this.state.scene !== "campus" || (this.props.pings ?? true) === false) return;
+    const emp = this.emp(); if (!emp) return;
+    const cos = emp.companies;
+    const camp = this.college();
+    const depts = camp.departments.filter(d => d[0] !== "Other");
+    const pool = [];
+    cos.slice(0, 10).forEach((co, ci) => {
+      const onP = this.pulsePeople(co.name).length;
+      const live = window.PULSE_CAMPUS.jobs.filter(j => j.company === co.name);
+      if (onP) pool.push({ company: co.name, label: onP + " on Pulse at " + co.name, short: onP + " on Pulse" });
+      if (live.length) pool.push({ company: co.name, label: live.length + " live role" + (live.length === 1 ? "" : "s") + " at " + co.name, short: live.length + " live" });
+      pool.push({ company: co.name, label: co.n + " counts at " + co.name, short: co.n + " counts" });
+      const d = depts[ci % depts.length][0];
+      pool.push({ company: co.name, label: "Signal \u00b7 2027 " + d + " \u2194 " + co.name + " seats", short: "2027 " + d + " \u2194 seat" });
+    });
+    this.state.inbox.filter(i => i.status === "replied").forEach(i => pool.push({ company: i.company, label: "Reply landed \u00b7 " + i.company + " seat" }));
+    if (!pool.length) return;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    const t = new Date();
+    const time = "day " + this.state.day;
+    const pings = [{ label: pick.label, time, id: Date.now() }, ...this.state.pings].slice(0, 3);
+    this.setState({ pings, pingNow: { company: pick.company, short: pick.short || "", id: Date.now() } });
+    clearTimeout(this._pingClear);
+    this._pingClear = setTimeout(() => this.setState({ pingNow: null }), 1500);
+  }
+  showToast(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._toastT);
+    this._toastT = setTimeout(() => this.setState({ toast: "" }), 2800);
+  }
+  openCompany(name) {
+    this.gain("visit", name);
+    this.set({ inspectCompany: name, inspectIndex: 0, inspectName: null, inspectRole: null, jobsOpen: false, overlay: null, askOpen: false, claimStep: null });
+  }
+  openPerson(company, role, name) {
+    const list = this.pulsePeople(company);
+    let idx = list.findIndex(p => p.name === name && (!role || p.role === role));
+    if (idx < 0) idx = 0;
+    this.gain("visit", company);
+    this.set({ inspectCompany: company, inspectIndex: idx, inspectName: list.length ? list[idx].name : null, inspectRole: list.length ? list[idx].role : null, jobsOpen: false, overlay: null, askOpen: false, claimStep: null });
+  }
+  step(dir) {
+    const list = this.pulsePeople(this.state.inspectCompany);
+    if (!list.length) return;
+    const idx = (this.state.inspectIndex + dir + list.length) % list.length;
+    this.set({ inspectIndex: idx, inspectName: list[idx].name, inspectRole: list[idx].role, askOpen: false });
+  }
+  reveal() {
+    const p = this.inspectPerson();
+    if (!p) return;
+    if (this.isOpen(p)) { this.set({ askOpen: true }); return; }
+    if (!this.state.claimed) { this.set({ claimStep: "form" }); return; }
+    if (this.state.looks <= 0) { this.setState({ overlay: "empty" }); return; }
+    const key = this.personKey(p);
+    const today = this.state.today.some(t => t.key === key) ? this.state.today : [{ key, name: p.name, company: p.company, role: p.role, status: "idle" }, ...this.state.today];
+    this.set({ looks: this.state.looks - 1, unlocked: [...this.state.unlocked, key], today, askOpen: true });
+    this.gain("reveals", 1);
+  }
+  submitClaim() {
+    if (!this.state.profile.name.trim() || !this.state.profile.email.trim()) return;
+    this.set({ claimed: true, claimStep: null, looks: Math.max(this.state.looks, 1) }, () => {
+      this.showToast("Credentials verified. This office is claimed.");
+      this.reveal();
+    });
+  }
+  sendAsk() {
+    const p = this.inspectPerson();
+    if (!p || !this.isOpen(p)) return;
+    const key = this.personKey(p);
+    const today = this.state.today.map(t => t.key === key ? { ...t, status: "asked" } : t);
+    const row = { key, name: p.name, company: p.company, role: p.role, status: "asked", askedDay: this.state.day, reply: "", askText: this.askDraft(p), dept: p.dept };
+    const inbox = [row, ...this.state.inbox.filter(i => i.key !== key)];
+    this.set({ today, inbox, askOpen: false });
+    this.gain("asks", 1);
+    this.showToast("Pulse will deliver this. They choose whether to answer.");
+  }
+  nextDay() {
+    const reply = "Happy to take fifteen minutes with this year\u2019s batch. Send two profiles.";
+    const replied = this.state.inbox.filter(i => i.status === "asked").length;
+    const inbox = this.state.inbox.map(i => i.status === "asked" ? { ...i, status: "replied", reply } : i);
+    const today = this.state.today.map(t => t.status === "asked" ? { ...t, status: "replied" } : t);
+    const m = { ...this.state.m, replies: this.state.m.replies + replied };
+    const fresh = [];
+    this.emp().companies.slice(0, 8).forEach(co => {
+      (co.people || []).forEach(p => { if (p.key && !this.state.onPulse.includes(p.key) && fresh.length < 2) fresh.push(p.key); });
+    });
+    this.set({ day: this.state.day + 1, looks: this.looksMax(), inbox, today, m, overlay: "drop", onPulse: [...this.state.onPulse, ...fresh], joined: fresh.length });
+  }
+  askDraft(p) {
+    const camp = this.college();
+    const first = p.name.split(/\s+/)[0].replace(/\./g, "");
+    const branch = p.dept && p.dept !== "Other" ? "this year\u2019s " + p.dept + " batch" : "this year\u2019s batch";
+    return first + ",\n\n" + camp.short + "\u2019s placement office found you on Pulse \u2014 " + p.role + " at " + p.company + ". We\u2019d like fifteen minutes with " + branch + ".\n\nPulse is sending this. You choose whether to answer.";
+  }
+  initials(short) {
+    return short.replace("National Institute of Technology", "NIT").split(/\s+/).filter(w => !["of", "the", "and", "College"].includes(w)).slice(0, 3).map(w => w[0]).join("").slice(0, 4);
+  }
+  polar(index, total, radius, twist) {
+    const a = ((index / Math.max(total, 1)) * Math.PI * 2) - Math.PI / 2 + (twist || 0);
+    return { left: 50 + radius * Math.cos(a), top: 50 + radius * Math.sin(a) };
+  }
+  coPos(index, total) {
+    let ring = 24, local = index, ringN = Math.min(8, total);
+    if (index >= 20) { ring = 44; local = index - 20; ringN = Math.max(total - 20, 1); }
+    else if (index >= 8) { ring = 34; local = index - 8; ringN = Math.min(12, total - 8); }
+    return this.polar(local, ringN, ring, 0.1);
+  }
+  landingDots() {
+    const nodes = []; let i = 0;
+    for (let ring = 1; ring <= 4; ring += 1) {
+      const n = ring === 1 ? 6 : ring === 2 ? 10 : ring === 3 ? 12 : 14;
+      for (let k = 0; k < n && i < 42; k += 1) {
+        const a = ((k / n) * Math.PI * 2) - Math.PI / 2 + ring * 0.18;
+        const r = 16 + ring * 8.4;
+        const kind = i % 11 === 0 ? "#0b7285" : i % 4 === 0 ? "#c8c8c8" : "#08a4b8";
+        nodes.push({ left: 50 + r * Math.cos(a), top: 50 + r * Math.sin(a), color: kind });
+        i += 1;
+      }
+    }
+    return nodes;
+  }
+  jobsFor() {
+    const camp = this.college(); if (!camp) return [];
+    const s = this.state;
+    return window.PULSE_CAMPUS.jobs.filter(j => {
+      if (j.stream !== s.jobStream) return false;
+      if (s.alumniOnly && !(j.alumni[camp.id] > 0)) return false;
+      if (s.jobCompany && j.company !== s.jobCompany) return false;
+      return true;
+    }).sort((a, b) => (b.alumni[camp.id] || 0) - (a.alumni[camp.id] || 0));
+  }
+  renderVals() {
+    const s = this.state;
+    const ready = this.ready();
+    const noop = () => {};
+    const base = {
+      isLanding: ready && s.scene === "landing",
+      isCampus: ready && s.scene === "campus" && !!this.college(),
+      hideImg: (e) => { e.target.style.display = "none"; },
+      stop: (e) => e.stopPropagation(),
+      toast: s.toast || false,
+      query: s.query, searchOpen: s.searchOpen,
+      landingDots: ready ? this.landingDots() : [],
+      collegeResults: [],
+      onQuery: (e) => this.setState({ query: e.target.value, searchOpen: true }),
+      onSearchFocus: () => this.setState({ searchOpen: true })
+    };
+    if (!ready) return { ...base, isLanding: true };
+    const q = s.query.trim().toLowerCase();
+    base.collegeResults = (q ? window.PULSE_CAMPUS.colleges.filter(c => (c.name + " " + c.short + " " + c.city).toLowerCase().includes(q)) : window.PULSE_CAMPUS.colleges.slice(0, 8)).map(c => ({
+      short: c.short,
+      sub: c.city + " \u00b7 NIRF " + c.nirf + " \u00b7 " + c.alumni + " alumni on Pulse",
+      pick: () => { this._empCache = {}; this.set({ collegeId: c.id, query: c.short, searchOpen: false, scene: "campus", inspectCompany: null, inspectName: null }, () => { this.seedPulse(); window.scrollTo(0, 0); }); }
+    }));
+    if (!base.isCampus) return base;
+
+    const camp = this.college();
+    const emp = this.emp();
+    const person = this.inspectPerson();
+    const open = this.isOpen(person);
+    const inspecting = !!s.inspectCompany;
+    const sideOpen = s.jobsOpen || inspecting;
+    const mark = (name) => window.companyMark(name);
+    const logoDomain = (name) => mark(name).domain;
+    const liveFor = (name) => window.PULSE_CAMPUS.jobs.filter(j => j.company === name);
+    const pct = this.momentumPct(s.m);
+    const milestone = pct >= 100 ? "Placement engine" : pct >= 75 ? "Batch briefed" : pct >= 50 ? "Warm paths open" : pct >= 25 ? "Office warm" : "Just claimed";
+
+    const vals = {
+      ...base,
+      campShort: camp.short,
+      campInitials: this.initials(camp.short),
+      claimed: s.claimed, notClaimed: !s.claimed,
+      looks: s.looks,
+      fuelLabel: s.looks <= 0 ? "Out" : "Sees",
+      fuelPips: Array.from({ length: this.looksMax() }, (_, i) => ({
+        bg: i < s.looks ? "#3ad6c9" : "transparent",
+        ring: i < s.looks ? "none" : "inset 0 0 0 1px #c9d6db"
+      })),
+      onFuel: () => { if (s.looks <= 0) this.setState({ overlay: "empty" }); else this.showToast(s.looks + " request" + (s.looks === 1 ? "" : "s") + " left today. The faded graph is free."); },
+      inboxLabel: (() => { const f = s.inbox.filter(i => i.status === "replied").length; const w = s.inbox.filter(i => i.status === "asked").length; return "Inbox" + (f ? " \u00b7 " + f + " new" : w ? " \u00b7 " + w : ""); })(),
+      inboxBorder: s.inbox.some(i => i.status === "replied") ? "rgba(8,164,184,0.5)" : "#2a2a2a",
+      inboxColor: s.inbox.some(i => i.status === "replied") ? "#08a4b8" : "#fcfcfc",
+      onInbox: () => this.setState({ overlay: "inbox" }),
+      onNextDay: () => this.nextDay(),
+      onReset: () => { try { localStorage.removeItem(this.STORAGE); } catch (e) {} this._empCache = {}; this.setState(this.defaults()); },
+      showMomentum: (this.props.showMomentum ?? true) !== false,
+      momentumPct: pct, milestone, flash: s.flash || false,
+      gridCols: sideOpen ? "0.82fr 1.18fr" : "1fr",
+      gridAlign: sideOpen ? "stretch" : "center",
+      gridJustify: sideOpen ? "stretch" : "center",
+      sideOpen,
+      radarCos: emp.companies.map((co, idx, all) => {
+        const pos = this.coPos(idx, all.length);
+        const on = s.inspectCompany === co.name && !s.inspectName;
+        const ping = !!(s.pingNow && s.pingNow.company === co.name);
+        return {
+          left: pos.left, top: pos.top,
+          label: co.n + " alumni counts at " + co.name,
+          dotBg: on || ping ? "#08a4b8" : "#6d838a",
+          dotShadow: on ? "0 0 0 5px rgba(8,164,184,0.22), 0 0 12px rgba(8,164,184,0.55)" : ping ? "0 0 10px rgba(8,164,184,0.7)" : "none",
+          dotScale: on ? "scale(1.7)" : "scale(1)",
+          opacity: inspecting && !on ? 0.32 : 1,
+          on, ping,
+          pingLabel: ping && s.pingNow ? s.pingNow.short : "",
+          open: () => this.openCompany(co.name)
+        };
+      }),
+      radarPeeps: (() => {
+        const mixed = [];
+        emp.companies.forEach(co => co.people.forEach(p => { if (s.onPulse.includes(p.key) && mixed.length < 26) mixed.push(p); }));
+        return mixed.map((p, idx) => {
+          const ring = 22 + (idx % 3) * 8;
+          const pos = this.polar(idx, mixed.length, ring, 0.08);
+          const on = person && person.company === p.company && person.name === p.name && person.role === p.role;
+          const atCo = s.inspectCompany === p.company;
+          return {
+            left: pos.left, top: pos.top,
+            label: p.role + " at " + p.company + ". " + (this.isOpen(p) ? p.name : "Name sealed") + ". Open to ask on Pulse.",
+            dotBg: on || atCo ? "#08a4b8" : "#7a9198",
+            dotShadow: on ? "0 0 0 5px rgba(8,164,184,0.22), 0 0 14px rgba(8,164,184,0.7)" : atCo ? "0 0 0 3px rgba(8,164,184,0.18)" : "none",
+            dotScale: on ? "scale(1.7)" : atCo ? "scale(1.2)" : "scale(1)",
+            dotOpacity: on ? 1 : atCo ? 0.95 : 0.55,
+            opacity: inspecting && !atCo ? 0.28 : 1,
+            on,
+            open: () => this.openPerson(p.company, p.role, p.name)
+          };
+        });
+      })(),
+      echoes: (() => {
+        if (!s.pingNow) return [];
+        const seed = s.pingNow.id;
+        return [0, 1, 2].map(i => {
+          const h = Math.abs((seed >> (i * 5)) ^ (seed * (i + 3))) % 997;
+          const r = 14 + (h % 30);
+          const a = ((h % 360) / 360) * Math.PI * 2;
+          return { left: 50 + r * Math.cos(a), top: 50 + r * Math.sin(a), delay: (i * 0.22) + "s" };
+        });
+      })(),
+      dock: emp.companies.map(co => {
+        const onP = this.pulsePeople(co.name).length;
+        const mk = mark(co.name);
+        const live = s.inspectCompany === co.name;
+        return {
+          name: co.name, n: co.n, initials: mk.initials, markBg: mk.bg, logoDomain: logoDomain(co.name),
+          title: onP ? onP + " on Pulse at " + co.name + " \u2014 click to see who" : co.n + " from this campus at " + co.name,
+          bg: live ? "rgba(8,164,184,0.1)" : "transparent",
+          border: live ? "rgba(8,164,184,0.45)" : "transparent",
+          tileShadow: onP ? "0 0 0 1.5px rgba(8,164,184,0.75)" : "0 0 0 1px rgba(255,255,255,0.14)",
+          nColor: live ? "#08a4b8" : "#8aa0a6",
+          open: () => this.openCompany(co.name)
+        };
+      }),
+      coCountLine: emp.companyCount + " employers \u00b7 teal tiles have someone you can ask",
+      howSteps: (() => {
+        let on = "company";
+        if (inspecting && !person) on = "who";
+        if (person && !open) on = "reveal";
+        if ((person && open) || s.askOpen) on = "ask";
+        return [["company", "1 \u00b7 Click a company"], ["who", "2 \u00b7 See who"], ["reveal", "3 \u00b7 Reveal the name"], ["ask", "4 \u00b7 Ask on Pulse"]].map(([id, label]) => ({
+          label,
+          color: id === on ? "#e8f4f4" : "#5c6e74",
+          border: id === on ? "rgba(8,164,184,0.55)" : "#212121",
+          bg: id === on ? "rgba(8,164,184,0.12)" : "transparent"
+        }));
+      })(),
+      hasPings: (this.props.pings ?? true) !== false && s.pings.length > 0,
+      pingFeed: s.pings.map((p, i) => ({ label: p.label, time: p.time, opacity: 1 - i * 0.28 })),
+      hasToday: s.today.length > 0,
+      today: s.today.map(t => ({
+        name: t.name,
+        initials: window.personInitials(t.name),
+        sub: t.company + (t.status === "asked" ? " \u00b7 Asked" : t.status === "replied" ? " \u00b7 Replied" : ""),
+        border: t.status === "replied" ? "rgba(61,214,140,0.5)" : t.status === "asked" ? "rgba(8,164,184,0.45)" : "#212121",
+        open: () => this.openPerson(t.company, t.role, t.name)
+      })),
+      caption: (() => {
+        if (s.jobsOpen) return "Live roles at employers your people already staff. Internship rows are a snapshot, not a live Internshala feed.";
+        if (!inspecting) return "Teal tiles already have someone on Pulse. Click one \u2014 see the seat, reveal the name, ask them.";
+        if (!person) return "No one on Pulse at this company yet. Open a teal tile to see who you can ask.";
+        if (s.claimStep === "form") return "Claim the office to see this name, then ask them on Pulse.";
+        if (s.askOpen) return "Edit if you want. Send with Pulse. They choose whether to answer.";
+        if (open) return "This is the person. Ask them on Pulse.";
+        return "The seat is visible. Reveal the name to open the message.";
+      })(),
+      onCloseInspect: () => this.set({ inspectCompany: null, inspectName: null, inspectRole: null, claimStep: null, askOpen: false }),
+      onCloseJobs: () => this.set({ jobsOpen: false }),
+      onCloseOverlay: () => this.setState({ overlay: null }),
+      onCloseAsk: () => this.set({ askOpen: false }),
+      onOpenAsk: () => this.set({ askOpen: true }),
+      onReveal: () => this.reveal(),
+      onSendAsk: () => this.sendAsk(),
+      onPrev: () => this.step(-1),
+      onNext: () => this.step(1),
+      onInvite: () => { this.gain("invites", 1); this.showToast("2027 invites queued from the placement office."); },
+      showPro: s.overlay === "pro",
+      onUnlockPro: () => { this.set({ pro: true, overlay: null }); this.showToast("Pro unlocked for this demo. Filters are live on the tape."); },
+      tapeChips: [
+        { key: "tapeBranch", label: "My branches" },
+        { key: "tapeWarm", label: "Warm paths" },
+        { key: "tapeToday", label: "Today" }
+      ].map(c => {
+        const active = s.pro && s[c.key];
+        return {
+          label: c.label,
+          lock: !s.pro,
+          border: active ? "#3ad6c9" : "#2a2a2a",
+          bg: active ? "rgba(58,214,201,0.12)" : "transparent",
+          color: active ? "#3ad6c9" : "#9e9e9e",
+          click: () => { if (!s.pro) { this.setState({ overlay: "pro" }); } else { this.set({ [c.key]: !s[c.key] }); } }
+        };
+      }),
+      ...((() => {
+        const depts = camp.departments.map(d => d[0].toLowerCase()).filter(d => d !== "other");
+        let tj = window.PULSE_CAMPUS.jobs.slice();
+        if (s.pro && s.tapeWarm) tj = tj.filter(j => (j.alumni[camp.id] || 0) > 0);
+        if (s.pro && s.tapeToday) tj = tj.filter(j => parseInt(j.posted, 10) <= 1);
+        if (s.pro && s.tapeBranch) tj = tj.filter(j => {
+          const e = j.eligibility.toLowerCase();
+          return e.includes("any engineering") || depts.some(d => e.includes(d));
+        });
+        const items = tj.map(j => {
+          const mk = mark(j.company);
+          const n = j.alumni[camp.id] || 0;
+          return {
+            title: j.title,
+            symbol: j.company,
+            symColor: n > 0 ? "#3ad6c9" : "#c5d4d8",
+            city: j.city,
+            ctc: j.ctc, posted: j.posted,
+            src: j.intern ? "Internshala \u00b7 snapshot" : "LinkedIn",
+            srcColor: j.intern ? "#8a5a12" : "#8aa0a6",
+            warm: n > 0, warmLabel: "Warm \u00b7 " + n,
+            border: n > 0 ? "rgba(8,164,184,0.4)" : "#1a1a1a",
+            bg: n > 0 ? "rgba(8,164,184,0.06)" : "transparent",
+            open: () => this.set({ jobCompany: j.company, jobsOpen: true, inspectCompany: null, askOpen: false, jobStream: j.stream, alumniOnly: false })
+          };
+        });
+        return { tapeItems: [...items, ...items], tapeDur: Math.max(30, items.length * 5) + "s" };
+      })()),
+      showInboxOverlay: s.overlay === "inbox",
+      showDrop: s.overlay === "drop",
+      showEmpty: s.overlay === "empty",
+      hasInbox: s.inbox.length > 0 && !s.inboxOpenKey, noInbox: s.inbox.length === 0 && !s.inboxOpenKey,
+      inboxTitle: s.inboxOpenKey ? "Thread" : "Asks and replies",
+      hasThread: !!s.inboxOpenKey,
+      onBackThread: () => this.setState({ inboxOpenKey: null }),
+      thread: (() => {
+        const it = s.inbox.find(i => i.key === s.inboxOpenKey);
+        if (!it) return {};
+        return {
+          name: it.name, initials: window.personInitials(it.name),
+          firstName: it.name.split(/\s+/)[0],
+          sub: it.role + " \u00b7 " + it.company,
+          askedDay: it.askedDay, replyDay: it.askedDay + 1,
+          askText: it.askText || "Ask sent via Pulse.",
+          replied: it.status === "replied", waiting: it.status === "asked",
+          reply: it.reply,
+          nudgeLabel: s.nudged.includes(it.key) ? "Nudged \u00b7 Pulse will remind them once" : "Nudge (demo)",
+          onNudge: () => { if (!s.nudged.includes(it.key)) { this.set({ nudged: [...s.nudged, it.key] }); this.showToast("Pulse will remind them once. No spam."); } },
+          onSendProfiles: () => { this.setState({ overlay: null, inboxOpenKey: null }); this.gain("invites", 1); this.showToast("2 profiles queued. " + it.name.split(/\s+/)[0] + " gets them via Pulse."); }
+        };
+      })(),
+      inbox: s.inbox.map(i => {
+        const mk = mark(i.company);
+        return {
+          name: i.name, markBg: mk.bg, initials: mk.initials, logoDomain: logoDomain(i.company),
+          sub: i.role + " \u00b7 " + i.company + " \u00b7 " + (i.status === "replied" ? "Replied" : "Waiting"),
+          reply: i.reply || false,
+          open: () => this.setState({ inboxOpenKey: i.key })
+        };
+      }),
+      day: s.day,
+      dropHeadline: this.looksMax() + " fresh looks landed.",
+      dropLine: (() => {
+        const rep = s.inbox.filter(i => i.status === "replied").length;
+        return (rep ? rep + " repl" + (rep === 1 ? "y" : "ies") + " waiting in the inbox. " : "") + "Names refill at midnight IST. Live roles stayed visible overnight.";
+      })(),
+      emptyLine: this.looksMax() + " names refill at midnight IST. Live roles stay visible. An Ask may have an answer.",
+      isRadarView: s.view !== "report",
+      isReportView: s.view === "report",
+      onToggleView: () => this.set({ view: s.view === "report" ? "radar" : "report", inspectCompany: null, jobsOpen: false, askOpen: false }),
+      reportBtnLabel: s.view === "report" ? "Radar" : "Report",
+      reportBtnBg: s.view === "report" ? "rgba(8,164,184,0.12)" : "transparent",
+      reportBtnBorder: s.view === "report" ? "rgba(8,164,184,0.55)" : "#2a2a2a",
+      reportBtnColor: s.view === "report" ? "#3ad6c9" : "#fcfcfc",
+      proOn: s.pro, proOff: !s.pro,
+      onOpenPro: () => this.setState({ overlay: "pro" }),
+      reportStats: [
+        { n: camp.alumni.toLocaleString("en-IN"), l: "Alumni Pulse can already see", bg: "#141414", border: "#212121" },
+        { n: camp.japan, l: "Working in Japan \u2014 the corridor most never get as a list", bg: "#181818", border: "#08a4b8" },
+        { n: camp.hiringManagers, l: "Alumni now in hiring / lead roles", bg: "#141414", border: "#212121" },
+        { n: camp.batches, l: "Batch years covered", bg: "#141414", border: "#212121" }
+      ],
+      mixCards: camp.mix.map(([id, pctv]) => {
+        const t = window.PULSE_CAMPUS.companyTypes.find(x => x.id === id);
+        return { pct: pctv, name: t ? t.name : id, barColor: id === "japan-mfg" ? "#0b7285" : "#3ad6c9" };
+      }),
+      ctcBands: (() => {
+        const byType = {};
+        window.PULSE_CAMPUS.jobs.forEach(j => {
+          const mres = /([0-9]+)[\u2013-]([0-9]+)/.exec(j.ctc);
+          if (!mres) return;
+          if (!byType[j.type]) byType[j.type] = { lo: [], hi: [] };
+          byType[j.type].lo.push(+mres[1]); byType[j.type].hi.push(+mres[2]);
+        });
+        const rows = Object.entries(byType).map(([id, v]) => {
+          const t = window.PULSE_CAMPUS.companyTypes.find(x => x.id === id);
+          const lo = Math.round(v.lo.reduce((a, b) => a + b, 0) / v.lo.length);
+          const hi = Math.round(v.hi.reduce((a, b) => a + b, 0) / v.hi.length);
+          return { name: t ? t.name : id, lo, hi, band: lo + "\u2013" + hi + " LPA" };
+        }).sort((a, b) => b.hi - a.hi);
+        const maxHi = rows.length ? rows[0].hi : 1;
+        return rows.map(r => ({ ...r, width: Math.round((r.hi / maxHi) * 100) }));
+      })(),
+      weekDeltas: emp.companies.slice(0, 8).map(co => {
+        let h = 0; for (let i = 0; i < co.name.length; i += 1) h = (h * 31 + co.name.charCodeAt(i)) | 0;
+        const d = (Math.abs(h) + s.day) % 4;
+        return d > 0 ? { delta: "+" + d, label: d > 2 ? "on Pulse at " + co.name : "counts at " + co.name } : null;
+      }).filter(Boolean).slice(0, 6),
+      reportCities: camp.cities.map(c => ({ name: c })),
+      principalBrief: (() => {
+        const top = emp.companies[0];
+        const onP2027 = Math.round(camp.alumni * 0.48), intake = Math.round(camp.alumni * 2.15 + 90);
+        return camp.alumni + " alumni from " + camp.short + " are already on Pulse \u2014 working, not a wish-list.\n\n" + camp.japan + " are in Japan. " + camp.hiringManagers + " are in hiring or lead roles. Densest employer: " + (top ? top.name + " (" + top.n + ")" : "\u2014") + ".\n\n" + onP2027 + " of " + intake + " in the 2027 intake have started a profile. The rest are not on the graph yet.\n\nNext: invite 2027, and request one roster where alumni already sit.";
+      })(),
+      onCopyPrincipal: () => {
+        const top = emp.companies[0];
+        const onP2027 = Math.round(camp.alumni * 0.48), intake = Math.round(camp.alumni * 2.15 + 90);
+        const text = camp.alumni + " alumni from " + camp.short + " are already on Pulse. " + camp.japan + " in Japan, " + camp.hiringManagers + " in hiring roles. Densest: " + (top ? top.name : "\u2014") + ". " + onP2027 + "/" + intake + " of 2027 have profiles. Next: invite 2027 and request one roster.";
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => {});
+        this.showToast("Principal brief copied.");
+      },
+      dropStats: (() => {
+        const drops = window.PULSE_CAMPUS.jobs.filter(j => parseInt(j.posted, 10) <= 1).length;
+        const items = [{ label: "Streak \u00b7 Day " + s.day }];
+        if (s.joined) items.push({ label: "+" + s.joined + " alumni joined overnight" });
+        if (drops) items.push({ label: drops + " fresh roles on the tape" });
+        return items.map((it, i) => ({ ...it, delay: (0.8 + i * 0.18) + "s" }));
+      })(),
+      showMatch: !!s.matchJobId,
+      onCloseMatch: () => this.setState({ matchJobId: null }),
+      mj: (() => {
+        const j = window.PULSE_CAMPUS.jobs.find(x => x.id === s.matchJobId);
+        if (!j) return {};
+        const n = j.alumni[camp.id] || 0;
+        const onP2027 = Math.round(camp.alumni * 0.48);
+        const elig = j.eligibility.toLowerCase();
+        const deptHit = camp.departments.find(d => elig.includes(d[0].toLowerCase())) || (elig.includes("any engineering") ? ["Any branch", 100] : camp.departments[0]);
+        const matched = Math.max(3, Math.round(onP2027 * (deptHit[1] / 100) * 0.6));
+        const sampleNames = ["Aditi K.", "Rohan S.", "Niharika P.", "Fatima R."];
+        const brief = camp.short + " alumni already sit at " + j.company + (n ? " (" + n + " in public profiles)" : "") + ". Live seat: " + j.title + ", " + j.city + ", " + j.ctc + ". " + matched + " of your 2027 " + deptHit[0] + " match. Pulse does not auto-apply anyone \u2014 you brief, they choose.";
+        return {
+          headline: j.title + " at " + j.company,
+          needSheet: !s.sheetUploaded, hasSheet: s.sheetUploaded,
+          loadDemo: () => { this.set({ sheetUploaded: true }); this.showToast("Demo sheet loaded \u2014 638 students of 2027."); },
+          matched,
+          matchNote: "Matched on branch (" + deptHit[0] + ") and eligibility. Skills + consent refine this on live Pulse.",
+          sample: sampleNames.map(nm => ({ name: nm, dept: deptHit[0], initials: window.personInitials(nm) })),
+          brief,
+          copyBrief: () => { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(brief).catch(() => {}); this.showToast("Brief copied. You send it to the batch."); }
+        };
+      })(),
+      showJobs: s.jobsOpen,
+      jobsKicker: (s.jobCompany ? "Live at " + s.jobCompany : "Live market") + " \u00b7 alumni already work here",
+      jobCompany: !!s.jobCompany,
+      jobCompanyLine: s.jobCompany ? s.jobCompany + " \u00b7 show all" : "",
+      onClearJobCompany: () => this.set({ jobCompany: null }),
+      engTabBg: s.jobStream === "engineering" ? "#212121" : "transparent",
+      engTabColor: s.jobStream === "engineering" ? "#fcfcfc" : "#9e9e9e",
+      itTabBg: s.jobStream === "it" ? "#212121" : "transparent",
+      itTabColor: s.jobStream === "it" ? "#fcfcfc" : "#9e9e9e",
+      onStreamEng: () => this.set({ jobStream: "engineering" }),
+      onStreamIt: () => this.set({ jobStream: "it" }),
+      japanChipBorder: s.japanOnly ? "#fff" : "#212121",
+      japanChipBg: s.japanOnly ? "#fff" : "#141414",
+      japanChipColor: s.japanOnly ? "#0a0a0a" : "#fcfcfc",
+      alumniChipBorder: s.alumniOnly ? "#fff" : "#212121",
+      alumniChipBg: s.alumniOnly ? "#fff" : "#141414",
+      alumniChipColor: s.alumniOnly ? "#0a0a0a" : "#fcfcfc",
+      onToggleJapan: () => this.set({ japanOnly: !s.japanOnly }),
+      onToggleAlumni: () => this.set({ alumniOnly: !s.alumniOnly }),
+      jobs: this.jobsFor().map(j => {
+        const mk = mark(j.company);
+        const n = j.alumni[camp.id] || 0;
+        return {
+          title: j.title, ctc: j.ctc, exp: j.exp, eligibility: j.eligibility,
+          coLine: j.company + " \u00b7 " + j.city + (j.intern ? " \u00b7 Internship" : ""),
+          markBg: mk.bg, initials: mk.initials, logoDomain: logoDomain(j.company),
+          badge: n ? n + " " + camp.short + " alumni work here" : "No " + camp.short + " alumni tagged",
+          badgeBg: n ? "#0e2a32" : "#141414",
+          badgeColor: n ? "#3ad6c9" : "#6d838a",
+          badgeBorder: n ? "#1c3d46" : "#212121",
+          note: "Brief " + camp.short + " against this seat. Pulse does not auto-apply anyone.",
+          match: () => this.set({ matchJobId: j.id }),
+          copyBrief: () => {
+            const text = camp.short + " alumni already work at " + j.company + (n ? " (" + n + " in public profiles)" : "") + ". Live seat: " + j.title + ", " + j.city + ", " + j.ctc + ". Eligibility: " + j.eligibility + ". Brief 2027 against this seat \u2014 Pulse does not auto-apply anyone.";
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => {});
+            this.showToast("Brief copied. You send it to the batch.");
+          }
+        };
+      }),
+      showCompany: false, showPerson: false,
+      cp: {}, pp: {},
+      profileName: s.profile.name, profileEmail: s.profile.email,
+      emailPlaceholder: "tpo@" + camp.short.toLowerCase().replace(/\s+/g, "") + ".edu",
+      onProfileName: (e) => { const profile = { ...this.state.profile, name: e.target.value }; this.set({ profile }); },
+      onProfileEmail: (e) => { const profile = { ...this.state.profile, email: e.target.value }; this.set({ profile }); },
+      onSubmitClaim: () => this.submitClaim(),
+      claimDisabled: !(s.profile.name.trim() && s.profile.email.trim()),
+      claimOpacity: (s.profile.name.trim() && s.profile.email.trim()) ? 1 : 0.45
+    };
+
+    if (inspecting && !s.jobsOpen) {
+      if (person) {
+        const co = emp.companies.find(c => c.name === person.company);
+        const list = this.pulsePeople(person.company);
+        const nAtRole = (co ? co.people : []).filter(p => p.role === person.role).length;
+        const live = liveFor(person.company);
+        const match = live.find(j => j.title.toLowerCase().includes(person.role.split(" ")[0].toLowerCase())) || live[0] || null;
+        const cut = s.today.find(t => t.key === this.personKey(person));
+        const asked = cut && cut.status === "asked";
+        const replied = cut && cut.status === "replied";
+        const type = window.PULSE_CAMPUS.companyTypes.find(t => t.id === person.type);
+        vals.showPerson = true;
+        vals.pp = {
+          company: person.company,
+          why: (type ? type.name : "Employer") + (person.hiring ? " \u00b7 can hire" : ""),
+          roleCity: person.role + " \u00b7 " + person.city,
+          deptYear: person.dept + " \u00b7 class of " + person.year,
+          deptYearPulse: person.dept + " \u00b7 class of " + person.year + " \u00b7 on Pulse",
+          coInitials: mark(person.company).initials,
+          markBg: mark(person.company).bg,
+          logoDomain: logoDomain(person.company),
+          initials: window.personInitials(person.name),
+          name: person.name,
+          nAtCo: co ? co.n : list.length,
+          nAtRole,
+          posOfTotal: (s.inspectIndex + 1) + "/" + list.length,
+          showClaim: s.claimStep === "form",
+          showAsk: s.askOpen && open && !s.claimStep,
+          showSealed: !open && !s.claimStep,
+          showOpen: open && !s.askOpen && !s.claimStep,
+          canAsk: open && !asked && !replied,
+          askPrompt: "This is the person. Ask them on Pulse to brief 2027.",
+          askLabel: "Ask " + person.name.split(/\s+/)[0] + " on Pulse",
+          askNote: this.askDraft(person),
+          revealLabel: !s.claimed ? "Claim office to reveal and ask" : (s.looks < 1 ? "Out of looks today" : "Reveal name to ask \u00b7 " + s.looks + " left today"),
+          seatLine: person.role + " at " + person.company + " \u00b7 " + (match ? match.ctc : "Band varies") + " \u00b7 " + person.city,
+          seatSub: nAtRole + " in this seat \u00b7 " + (co ? co.n : 0) + " " + camp.short + " alumni here \u00b7 brief 2027 " + (person.dept !== "Other" ? person.dept : camp.departments[0][0]),
+          statusLine: replied ? "They replied. Brief 2027 or invite the match." : asked ? "Asked. Pulse is delivering. They choose whether to answer." : false,
+          hasLive: live.length > 0 && !s.claimStep && !s.askOpen,
+          live: live.slice(0, 3).map(j => ({
+            title: j.title,
+            sub: j.city + " \u00b7 " + j.posted + " ago" + (j.intern ? " \u00b7 Internship \u00b7 Internshala snapshot" : ""),
+            badge: j.intern ? "Snapshot" : "Open now",
+            open: () => this.set({ jobCompany: j.company, jobsOpen: true, inspectCompany: null, askOpen: false })
+          })),
+          showNav: !s.claimStep && !s.askOpen && list.length > 1
+        };
+      } else {
+        const co = emp.companies.find(c => c.name === s.inspectCompany);
+        if (co) {
+          const type = window.PULSE_CAMPUS.companyTypes.find(t => t.id === co.type);
+          const live = liveFor(co.name);
+          const onP = this.pulsePeople(co.name);
+          vals.showCompany = true;
+          vals.cp = {
+            name: co.name, n: co.n,
+            typeName: type ? type.name : "Employer",
+            initials: mark(co.name).initials, markBg: mark(co.name).bg, logoDomain: logoDomain(co.name),
+            countLine: camp.short + " alumni work here",
+            topRoleN: co.roles[0][1], topRoleLabel: "in " + co.roles[0][0],
+            liveN: live.length, onPulseN: onP.length,
+            hasWho: onP.length > 0, noWho: onP.length === 0,
+            noWhoLine: "Nobody from this campus is on Pulse at " + co.name + " yet. Teal company tiles already have someone you can reveal and ask.",
+            who: onP.slice(0, 6).map(p => ({
+              initials: window.personInitials(p.name),
+              display: this.isOpen(p) ? p.name : "Name sealed",
+              sub: p.role + " \u00b7 " + p.dept + " \u00b7 class of " + p.year + " \u00b7 " + p.city,
+              go: this.isOpen(p) ? "Ask" : "Reveal",
+              open: () => this.openPerson(p.company, p.role, p.name)
+            })),
+            roles: co.roles.slice(0, 4).map(([role, n]) => ({ role, n })),
+            briefLine: "Brief 2027 " + camp.departments[0][0] + ". 2026 is still incomplete.",
+            hasLive: live.length > 0,
+            live: live.slice(0, 3).map(j => ({
+              title: j.title,
+              sub: j.city + " \u00b7 " + j.posted + " ago" + (j.intern ? " \u00b7 Internship \u00b7 Internshala snapshot" : ""),
+              badge: j.intern ? "Snapshot" : "Open now",
+              open: () => this.set({ jobCompany: j.company, jobsOpen: true, inspectCompany: null })
+            })),
+            inviteLabel: s.claimed ? "Invite 2027 who match" : "Claim office to invite 2027"
+          };
+        }
+      }
+    }
+    return vals;
+  }
+}
+</script>
+</body>
+</html>
