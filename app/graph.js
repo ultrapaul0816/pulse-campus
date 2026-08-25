@@ -239,13 +239,19 @@ window.COMPANY_DOMAINS = {
   ShareChat: "sharechat.com"
 };
 
+window.logoSrc = function (domain) {
+  const path = String(location.pathname || "").replace(/index\.html$/, "");
+  const inApp = /\/app\/?$/.test(path);
+  return (inApp ? "./logos/" : "./app/logos/") + domain + ".png";
+};
+
 window.companyMark = function (name) {
   const domain = window.COMPANY_DOMAINS[name] || (name.toLowerCase().replace(/[^a-z0-9]+/g, "") + ".com");
   const initials = name.replace(/[^A-Za-z0-9 ]/g, "").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   let h = 0;
   for (let i = 0; i < name.length; i += 1) h = (h * 31 + name.charCodeAt(i)) | 0;
   const palette = ["#c4452d", "#0f6f7c", "#1f4e79", "#8a5a12", "#2f6b4f", "#5b2d8c", "#8b1e3f", "#0b4f6c"];
-  return { domain, initials, bg: palette[Math.abs(h) % palette.length] };
+  return { domain, initials, bg: palette[Math.abs(h) % palette.length], src: window.logoSrc(domain) };
 };
 
 window.logoHTML = function (name, extraClass) {
@@ -254,7 +260,7 @@ window.logoHTML = function (name, extraClass) {
   const domain = mark.domain;
   return `<span class="co-logo ${extraClass || ""}" title="${safe}">
     <em style="background:${mark.bg}">${mark.initials}</em>
-    <img alt="" src="https://logo.clearbit.com/${domain}" data-domain="${domain}" decoding="async" referrerpolicy="no-referrer" onload="if(this.naturalWidth&amp;&amp;this.naturalWidth&lt;32){this.onerror();}else{this.parentNode.classList.add('has-img');}" onerror="var b=this.parentNode;if(!this.dataset.fb){this.dataset.fb=1;this.src='https://www.google.com/s2/favicons?sz=128&amp;domain='+this.dataset.domain;}else{this.remove();b.classList.remove('has-img');}">
+    <img alt="" src="${mark.src}" data-domain="${domain}" decoding="async" onload="if(this.naturalWidth&amp;&amp;this.naturalWidth&lt;24){this.onerror();}else{this.parentNode.classList.add('has-img');}" onerror="var b=this.parentNode;if(!this.dataset.fb){this.dataset.fb=1;this.src='https://www.google.com/s2/favicons?sz=128&amp;domain='+this.dataset.domain;}else{this.remove();b.classList.remove('has-img');}">
   </span>`;
 };
 

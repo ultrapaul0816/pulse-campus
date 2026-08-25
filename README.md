@@ -86,7 +86,8 @@ support.js        Prototype runtime (generated). Do not hand-edit.
 app/index.html    Vanilla IIFE SPA (previous implementation)
 app/styles.css    Grok dark + teal
 app/data.js       14 colleges, employer counts, jobs j1–j27 (some intern: true)
-app/graph.js      buildEmployment, role books, COMPANY_DOMAINS, logoHTML
+app/graph.js      buildEmployment, role books, COMPANY_DOMAINS, logoHTML / logoSrc
+app/logos/        local PNG marks (`{domain}.png`) — used by prototype and SPA
 app/app.js        IIFE SPA. STORAGE = pulse-campus:tpo:v8. LOOKS_MAX = 3
 prototype/HANDOFF.md   Notes from the design drop (momentum, tape, daily drop, inbox)
 .github/workflows/pages.yml   deploys root prototype + app/ to GitHub Pages
@@ -106,7 +107,7 @@ prototype/HANDOFF.md   Notes from the design drop (momentum, tape, daily drop, i
 ### Data / graph
 
 - `data.js` — colleges (id, short, city, NIRF, alumni, departments, companies by type). NIT Trichy (`nitt`) has 27 employers.
-- `graph.js` — turns company counts × role book into people. Keys look like `Bosch|Quality Engineer|Rohit V.` or `Bosch|Quality Engineer|0` for synthesised rows.
+- `graph.js` — turns company counts × role book into people. Keys look like `Bosch|Quality Engineer|Rohit V.` or `Bosch|Quality Engineer|0` for synthesised rows. Logos: `logoSrc(domain)` → `app/logos/{domain}.png`, then Google favicon, then initials. Clearbit is not used (blocked).
 - Live jobs in `data.js` are illustrative of Pulse/market cuts, not a live API. College affinity = **counts**, not verified names.
 
 ### State (`app.js`)
