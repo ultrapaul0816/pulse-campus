@@ -85,7 +85,8 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <button type="button" onClick="{{ onFuel }}" title="Daily names. Aggregates are free. Seeing a name uses a look." style="display:flex;align-items:center;gap:8px;border:1px solid #2a2a2a;background:#141414;border-radius:999px;padding:6px 12px 6px 10px;color:#fcfcfc">
+        <sc-if value="{{ claimed }}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{ onFuel }}" title="Pulse messages you can start today. The graph is free once this office is claimed." style="display:flex;align-items:center;gap:8px;border:1px solid #2a2a2a;background:#141414;border-radius:999px;padding:6px 12px 6px 10px;color:#fcfcfc">
           <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase">{{ fuelLabel }}</span>
           <span style="display:flex;gap:4px">
             <sc-for list="{{ fuelPips }}" as="p" hint-placeholder-count="3">
@@ -97,9 +98,36 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
         <button type="button" onClick="{{ onInbox }}" style="border:1px solid {{ inboxBorder }};background:#141414;color:{{ inboxColor }};border-radius:999px;padding:6px 12px;font-size:13px">{{ inboxLabel }}</button>
         <button type="button" onClick="{{ onToggleView }}" style="background:{{ reportBtnBg }};color:{{ reportBtnColor }};border:1px solid {{ reportBtnBorder }};border-radius:999px;padding:6px 12px;font-size:13px">{{ reportBtnLabel }}</button>
         <button type="button" onClick="{{ onNextDay }}" title="Demo: advance a day" style="background:transparent;color:#fcfcfc;border:1px solid #2a2a2a;border-radius:999px;padding:6px 12px;font-size:13px">Next day</button>
+        </sc-if>
         <button type="button" onClick="{{ onReset }}" style="background:transparent;color:#fcfcfc;border:1px solid #2a2a2a;border-radius:999px;padding:6px 12px;font-size:13px">Reset demo</button>
       </div>
     </div>
+
+    <sc-if value="{{ isLocked }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Claim office" style="display:grid;grid-template-columns:0.9fr 1.1fr;gap:36px;padding:28px 0 80px;align-items:center">
+        <div style="filter:blur(8px);opacity:0.4;pointer-events:none;user-select:none" aria-hidden="true">
+          <div style="width:min(380px,90%);aspect-ratio:1;margin:0 auto;border-radius:50%;background:repeating-radial-gradient(circle at 50% 50%, transparent 0 11.6%, rgba(255,255,255,0.05) 12% 12.3%),radial-gradient(circle at 50% 50%, #141414 0%, #050505 70%);box-shadow:0 0 0 1px #3f3f46;position:relative;overflow:hidden">
+            <div style="position:absolute;inset:0;background:conic-gradient(from 0deg, transparent 0 74%, rgba(8,164,184,0.5) 100%);animation:sweep 3.4s linear infinite"></div>
+            <div style="position:absolute;inset:42%;border-radius:50%;background:#0a2229;border:1px solid rgba(58,214,201,0.45);display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#08a4b8">{{ campInitials }}</div>
+          </div>
+        </div>
+        <div style="background:#141414;border:1px solid #212121;border-radius:16px;padding:28px 24px 24px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0b6;margin-bottom:8px">Claim this office</div>
+          <h2 style="font-size:28px;letter-spacing:-0.04em;margin:0 0 10px">Verify you sit at {{ campShort }}</h2>
+          <p style="color:#c5d4d8;font-size:15px;margin:0 0 12px;line-height:1.45">Pulse already holds a graph for this campus. Company seats, alumni on Pulse, and live roles open after a work-email claim. A guest should not see another university&rsquo;s map.</p>
+          <p style="color:#8aa0a6;font-size:13px;margin:0 0 18px">{{ lockTeaser }}</p>
+          <div style="display:grid;gap:6px;margin-bottom:12px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8aa0a6">Your name</span>
+            <input type="text" placeholder="Placement officer" value="{{ profileName }}" onInput="{{ onProfileName }}" style="width:100%;background:#0e0e0e;color:#fcfcfc;border:1px solid #2a2a2a;border-radius:16px;padding:12px 16px;box-sizing:border-box">
+          </div>
+          <div style="display:grid;gap:6px;margin-bottom:16px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8aa0a6">Work email</span>
+            <input type="email" placeholder="{{ emailPlaceholder }}" value="{{ profileEmail }}" onInput="{{ onProfileEmail }}" style="width:100%;background:#0e0e0e;color:#fcfcfc;border:1px solid #2a2a2a;border-radius:16px;padding:12px 16px;box-sizing:border-box">
+          </div>
+          <button type="button" onClick="{{ onSubmitClaim }}" disabled="{{ claimDisabled }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%;opacity:{{ claimOpacity }}">Verify this office</button>
+        </div>
+      </div>
+    </sc-if>
 
     <sc-if value="{{ showMomentum }}" hint-placeholder-val="{{ true }}">
       <div style="display:flex;align-items:center;gap:12px;margin:8px 0 4px">
@@ -212,7 +240,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
           <div style="background:#0e0e0e;border:1px solid #1c3d46;border-radius:14px;padding:16px 18px 14px;margin:0 0 14px">
             <b style="display:block;font-size:52px;letter-spacing:-0.06em;line-height:0.95;color:#fcfcfc">{{ cp.n }}</b>
             <em style="display:block;font-style:normal;font-size:15px;color:#c5d4d8;margin-top:6px">{{ cp.countLine }}</em>
-            <small style="display:block;color:#8aa0a6;font-size:12px;margin-top:6px">Public-profile counts, not verified names. Names only when they join Pulse.</small>
+            <small style="display:block;color:#8aa0a6;font-size:12px;margin-top:6px">Public-profile counts. People on Pulse stay unnamed in this office until they answer.</small>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px">
             <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px"><b style="display:block;font-size:22px;letter-spacing:-0.03em">{{ cp.topRoleN }}</b><span style="color:#9e9e9e;font-size:12px">{{ cp.topRoleLabel }}</span></div>
@@ -221,7 +249,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
           </div>
           <sc-if value="{{ cp.hasWho }}" hint-placeholder-val="{{ false }}">
             <div style="display:grid;gap:8px;margin:0 0 14px">
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6">Who you can ask &middot; on Pulse</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6">Alumni on Pulse &middot; no names</div>
               <sc-for list="{{ cp.who }}" as="w" hint-placeholder-count="2">
                 <button type="button" onClick="{{ w.open }}" style="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;color:inherit;background:#0e0e0e;border:1px solid #1c3d46;border-radius:12px;padding:10px 12px" style-hover="border-color:#2f5b66">
                   <span style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:4px"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ w.initials }}</i></span>
@@ -295,28 +323,28 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
             <div style="display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:1px solid #212121;border-radius:12px;margin-bottom:14px;background:#0e0e0e">
               <span style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:4px"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ pp.initials }}</i></span>
               <div>
-                <b style="display:block;font-size:16px">{{ pp.name }}</b>
+                <b style="display:block;font-size:16px">Alumni on Pulse</b>
                 <small style="display:block;color:#c5d4d8;font-size:13px">{{ pp.roleCity }}</small>
                 <small style="color:#9e9e9e;font-size:13px">{{ pp.deptYear }}</small>
               </div>
             </div>
-            <p style="color:#9e9e9e;font-size:13px;margin:0 0 14px">This is the message. Pulse delivers it &mdash; not your college inbox.</p>
+            <p style="color:#9e9e9e;font-size:13px;margin:0 0 14px">{{ pp.askKindLine }} Pulse carries it inside the product &mdash; not your college inbox, not LinkedIn.</p>
             <blockquote style="margin:0 0 14px;padding:12px 14px;border-left:3px solid #08a4b8;background:#0e0e0e;color:#d5e6ea;font-size:14px;line-height:1.5;white-space:pre-line">{{ pp.askNote }}</blockquote>
             <button type="button" onClick="{{ onSendAsk }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%">Send with Pulse</button>
             <button type="button" onClick="{{ onCloseAsk }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;width:100%;margin-top:8px">Keep looking</button>
           </sc-if>
 
           <sc-if value="{{ pp.showSealed }}" hint-placeholder-val="{{ false }}">
-            <button type="button" onClick="{{ onReveal }}" aria-label="Name sealed. Seat is visible." style="display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:1px solid #212121;border-radius:12px;margin-bottom:14px;background:#0e0e0e;color:inherit;text-align:left" style-hover="border-color:rgba(8,164,184,0.5)">
-              <span aria-hidden="true" style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:4px;filter:blur(7px)"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ pp.initials }}</i></span>
+            <div style="display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:1px solid #212121;border-radius:12px;margin-bottom:14px;background:#0e0e0e">
+              <span style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:4px"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ pp.initials }}</i></span>
               <div>
-                <b aria-hidden="true" style="display:block;font-size:16px;filter:blur(7px);user-select:none">{{ pp.name }}</b>
+                <b style="display:block;font-size:16px">Alumni on Pulse</b>
                 <small style="display:block;color:#c5d4d8;font-size:13px">{{ pp.roleCity }}</small>
                 <small style="color:#9e9e9e;font-size:13px">{{ pp.deptYearPulse }}</small>
               </div>
-            </button>
+            </div>
             <div style="background:rgba(8,164,184,0.1);border:1px solid rgba(8,164,184,0.45);border-radius:14px;padding:12px 14px 14px;margin:0 0 14px">
-              <p style="margin:0 0 10px;font-size:13px;color:#c5d4d8">You can already see the seat. Reveal the name, then Pulse opens the message.</p>
+              <p style="margin:0 0 10px;font-size:13px;color:#c5d4d8">No name. No personal file. Send a hello on Pulse &mdash; they choose whether to answer. HR / placement is a later ask.</p>
               <button type="button" onClick="{{ onReveal }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%">{{ pp.revealLabel }}</button>
             </div>
           </sc-if>
@@ -325,15 +353,15 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
             <div style="display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:1px solid #212121;border-radius:12px;margin-bottom:14px;background:#0e0e0e">
               <span style="display:inline-flex;background:#0e2a32;border-radius:999px;padding:4px"><i style="width:26px;height:26px;border-radius:50%;background:#12333c;border:1px solid rgba(58,214,201,0.4);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:700">{{ pp.initials }}</i></span>
               <div>
-                <b style="display:block;font-size:16px">{{ pp.name }}</b>
+                <b style="display:block;font-size:16px">Alumni on Pulse</b>
                 <small style="display:block;color:#c5d4d8;font-size:13px">{{ pp.roleCity }}</small>
                 <small style="color:#9e9e9e;font-size:13px">{{ pp.deptYear }}</small>
               </div>
             </div>
-            <sc-if value="{{ pp.canAsk }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ pp.canHr }}" hint-placeholder-val="{{ false }}">
               <div style="background:rgba(8,164,184,0.1);border:1px solid rgba(8,164,184,0.45);border-radius:14px;padding:12px 14px 14px;margin:0 0 14px">
-                <p style="margin:0 0 10px;font-size:13px;color:#c5d4d8">{{ pp.askPrompt }}</p>
-                <button type="button" onClick="{{ onOpenAsk }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%">{{ pp.askLabel }}</button>
+                <p style="margin:0 0 10px;font-size:13px;color:#c5d4d8">They replied. Ask on Pulse for an HR intro or two profiles &mdash; that is the placement pipeline.</p>
+                <button type="button" onClick="{{ onOpenHr }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%">Ask for HR / pipeline on Pulse</button>
               </div>
             </sc-if>
             <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:12px 14px;margin:0 0 12px">
@@ -514,6 +542,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
     </sc-if>
   </div>
 
+  <sc-if value="{{ claimed }}" hint-placeholder-val="{{ false }}">
   <div data-screen-label="Market tape" style="position:fixed;left:0;right:0;bottom:0;z-index:15;background:#0a0a0a;border-top:1px solid #212121;display:flex;align-items:stretch">
     <div style="display:flex;align-items:center;gap:6px;padding:10px 14px;border-right:1px solid #212121;flex-shrink:0;background:#0a0a0a">
       <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#8aa0a6;margin-right:4px">Market</span>
@@ -540,6 +569,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
       </div>
     </div>
   </div>
+  </sc-if>
 
   <sc-if value="{{ showMatch }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ onCloseMatch }}" style="position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:20;display:grid;place-items:center;padding:24px">
@@ -695,7 +725,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.STORAGE = "pulse-campus:dc:v1";
+    this.STORAGE = "pulse-campus:dc:v2";
     this.state = this.loadState();
     this._empCache = {};
   }
@@ -707,7 +737,7 @@ class Component extends DCLogic {
       inspectCompany: null, inspectName: null, inspectRole: null, inspectIndex: 0,
       askOpen: false, jobsOpen: false, jobCompany: null, jobStream: "engineering",
       japanOnly: false, alumniOnly: true,
-      overlay: null, toast: "",
+      overlay: null, toast: "", askKind: "connect",
       pro: false, tapeWarm: false, tapeBranch: false, tapeToday: false,
       view: "radar", inboxOpenKey: null, sheetUploaded: false, matchJobId: null, joined: 0, nudged: [],
       m: { visits: [], reveals: 0, asks: 0, replies: 0, invites: 0 },
@@ -716,7 +746,7 @@ class Component extends DCLogic {
   }
   loadState() {
     try {
-      const raw = localStorage.getItem("pulse-campus:dc:v1");
+      const raw = localStorage.getItem(this.STORAGE);
       if (!raw) return this.defaults();
       const parsed = JSON.parse(raw);
       return { ...this.defaults(), ...parsed, searchOpen: false, overlay: null, toast: "", askOpen: false, pingNow: null, flash: "" };
@@ -775,8 +805,14 @@ class Component extends DCLogic {
   momentumPct(m) {
     return Math.min(100, m.visits.length * 3 + m.reveals * 10 + m.asks * 14 + m.replies * 20 + m.invites * 8);
   }
+  seatLabel(p) {
+    return p.role + " \u00b7 " + p.dept + " \u00b7 class of " + p.year + " \u00b7 " + p.city;
+  }
+  roleInitials(p) {
+    return String(p.role || "A").split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  }
   firePing() {
-    if (!this.ready() || this.state.scene !== "campus" || (this.props.pings ?? true) === false) return;
+    if (!this.ready() || this.state.scene !== "campus" || !this.state.claimed || (this.props.pings ?? true) === false) return;
     const emp = this.emp(); if (!emp) return;
     const cos = emp.companies;
     const camp = this.college();
@@ -807,15 +843,17 @@ class Component extends DCLogic {
     this._toastT = setTimeout(() => this.setState({ toast: "" }), 2800);
   }
   openCompany(name) {
+    if (!this.state.claimed) { this.set({ claimStep: "form" }); return; }
     this.gain("visit", name);
-    this.set({ inspectCompany: name, inspectIndex: 0, inspectName: null, inspectRole: null, jobsOpen: false, overlay: null, askOpen: false, claimStep: null });
+    this.set({ inspectCompany: name, inspectIndex: 0, inspectName: null, inspectRole: null, jobsOpen: false, overlay: null, askOpen: false, claimStep: null, askKind: "connect" });
   }
   openPerson(company, role, name) {
+    if (!this.state.claimed) { this.set({ claimStep: "form" }); return; }
     const list = this.pulsePeople(company);
     let idx = list.findIndex(p => p.name === name && (!role || p.role === role));
     if (idx < 0) idx = 0;
     this.gain("visit", company);
-    this.set({ inspectCompany: company, inspectIndex: idx, inspectName: list.length ? list[idx].name : null, inspectRole: list.length ? list[idx].role : null, jobsOpen: false, overlay: null, askOpen: false, claimStep: null });
+    this.set({ inspectCompany: company, inspectIndex: idx, inspectName: list.length ? list[idx].name : null, inspectRole: list.length ? list[idx].role : null, jobsOpen: false, overlay: null, askOpen: false, claimStep: null, askKind: "connect" });
   }
   step(dir) {
     const list = this.pulsePeople(this.state.inspectCompany);
@@ -824,36 +862,47 @@ class Component extends DCLogic {
     this.set({ inspectIndex: idx, inspectName: list[idx].name, inspectRole: list[idx].role, askOpen: false });
   }
   reveal() {
+    this.startConnect();
+  }
+  startConnect() {
     const p = this.inspectPerson();
     if (!p) return;
-    if (this.isOpen(p)) { this.set({ askOpen: true }); return; }
     if (!this.state.claimed) { this.set({ claimStep: "form" }); return; }
-    if (this.state.looks <= 0) { this.setState({ overlay: "empty" }); return; }
     const key = this.personKey(p);
-    const today = this.state.today.some(t => t.key === key) ? this.state.today : [{ key, name: p.name, company: p.company, role: p.role, status: "idle" }, ...this.state.today];
-    this.set({ looks: this.state.looks - 1, unlocked: [...this.state.unlocked, key], today, askOpen: true });
-    this.gain("reveals", 1);
+    const row = this.state.inbox.find(i => i.key === key);
+    if (row && row.status === "replied") { this.set({ askOpen: true, askKind: "hr" }); return; }
+    if (this.state.looks <= 0 && !(row && row.status === "asked")) { this.setState({ overlay: "empty" }); return; }
+    this.set({ askOpen: true, askKind: "connect" });
   }
   submitClaim() {
     if (!this.state.profile.name.trim() || !this.state.profile.email.trim()) return;
-    this.set({ claimed: true, claimStep: null, looks: Math.max(this.state.looks, 1) }, () => {
-      this.showToast("Credentials verified. This office is claimed.");
-      this.reveal();
+    this.set({ claimed: true, claimStep: null, looks: this.looksMax() }, () => {
+      this.seedPulse();
+      this.showToast("Office verified. The graph for this campus is yours.");
     });
   }
   sendAsk() {
     const p = this.inspectPerson();
-    if (!p || !this.isOpen(p)) return;
+    if (!p || !this.state.claimed) return;
     const key = this.personKey(p);
-    const today = this.state.today.map(t => t.key === key ? { ...t, status: "asked" } : t);
-    const row = { key, name: p.name, company: p.company, role: p.role, status: "asked", askedDay: this.state.day, reply: "", askText: this.askDraft(p), dept: p.dept };
+    const kind = this.state.askKind || "connect";
+    const existing = this.state.inbox.find(i => i.key === key);
+    if (kind === "connect" && this.state.looks <= 0 && !existing) { this.setState({ overlay: "empty" }); return; }
+    const looks = (kind === "connect" && !existing) ? this.state.looks - 1 : this.state.looks;
+    const todayRow = { key, name: p.name, display: this.seatLabel(p), company: p.company, role: p.role, status: "asked" };
+    const today = this.state.today.some(t => t.key === key) ? this.state.today.map(t => t.key === key ? { ...t, status: "asked" } : t) : [todayRow, ...this.state.today];
+    const row = {
+      key, name: p.name, display: this.seatLabel(p), company: p.company, role: p.role, dept: p.dept, year: p.year, city: p.city,
+      status: "asked", kind, askedDay: this.state.day, reply: existing ? existing.reply : "",
+      askText: kind === "hr" ? this.hrDraft(p) : this.connectDraft(p)
+    };
     const inbox = [row, ...this.state.inbox.filter(i => i.key !== key)];
-    this.set({ today, inbox, askOpen: false });
-    this.gain("asks", 1);
-    this.showToast("Pulse will deliver this. They choose whether to answer.");
+    this.set({ looks, today, inbox, askOpen: false, unlocked: [...new Set([...this.state.unlocked, key])] });
+    this.gain(kind === "hr" ? "asks" : "asks", 1);
+    this.showToast(kind === "hr" ? "Pulse will carry the HR / pipeline ask." : "Pulse will deliver this hello. They choose whether to answer.");
   }
   nextDay() {
-    const reply = "Happy to take fifteen minutes with this year\u2019s batch. Send two profiles.";
+    const reply = "Happy to stay in touch. Tell me how I can help this year\u2019s batch.";
     const replied = this.state.inbox.filter(i => i.status === "asked").length;
     const inbox = this.state.inbox.map(i => i.status === "asked" ? { ...i, status: "replied", reply } : i);
     const today = this.state.today.map(t => t.status === "asked" ? { ...t, status: "replied" } : t);
@@ -864,11 +913,16 @@ class Component extends DCLogic {
     });
     this.set({ day: this.state.day + 1, looks: this.looksMax(), inbox, today, m, overlay: "drop", onPulse: [...this.state.onPulse, ...fresh], joined: fresh.length });
   }
-  askDraft(p) {
+  connectDraft(p) {
     const camp = this.college();
-    const first = p.name.split(/\s+/)[0].replace(/\./g, "");
-    const branch = p.dept && p.dept !== "Other" ? "this year\u2019s " + p.dept + " batch" : "this year\u2019s batch";
-    return first + ",\n\n" + camp.short + "\u2019s placement office found you on Pulse \u2014 " + p.role + " at " + p.company + ". We\u2019d like fifteen minutes with " + branch + ".\n\nPulse is sending this. You choose whether to answer.";
+    return "Hello \u2014\n\n" + camp.short + "\u2019s placement office is on Pulse. We can see a " + p.role + " seat from " + p.dept + ", class of " + p.year + ", at " + p.company + ".\n\nThis is a hello. We want to stay in touch with alumni there. Not a job ask, and we are not asking for your name on this thread.\n\nPulse is sending this. You choose whether to answer.";
+  }
+  hrDraft(p) {
+    const camp = this.college();
+    return "Thank you for writing back.\n\nWe have 2027 " + (p.dept !== "Other" ? p.dept : "engineering") + " to brief against " + p.company + ". If you can introduce us to the right HR or hiring owner \u2014 or take two profiles \u2014 that helps us build a placement pipeline.\n\nPulse will carry this. You choose.";
+  }
+  askDraft(p) {
+    return (this.state.askKind === "hr") ? this.hrDraft(p) : this.connectDraft(p);
   }
   initials(short) {
     return short.replace("National Institute of Technology", "NIT").split(/\s+/).filter(w => !["of", "the", "and", "College"].includes(w)).slice(0, 3).map(w => w[0]).join("").slice(0, 4);
@@ -928,7 +982,7 @@ class Component extends DCLogic {
     base.collegeResults = (q ? window.PULSE_CAMPUS.colleges.filter(c => (c.name + " " + c.short + " " + c.city).toLowerCase().includes(q)) : window.PULSE_CAMPUS.colleges.slice(0, 8)).map(c => ({
       short: c.short,
       sub: c.city + " \u00b7 NIRF " + c.nirf + " \u00b7 " + c.alumni + " alumni on Pulse",
-      pick: () => { this._empCache = {}; this.set({ collegeId: c.id, query: c.short, searchOpen: false, scene: "campus", inspectCompany: null, inspectName: null }, () => { this.seedPulse(); window.scrollTo(0, 0); }); }
+      pick: () => { this._empCache = {}; this.set({ collegeId: c.id, query: c.short, searchOpen: false, scene: "campus", claimed: false, claimStep: "form", inspectCompany: null, inspectName: null, inspectRole: null, onPulse: [], inbox: [], today: [], unlocked: [], askOpen: false, jobsOpen: false, overlay: null, view: "radar" }, () => { window.scrollTo(0, 0); }); }
     }));
     if (!base.isCampus) return base;
 
@@ -949,20 +1003,22 @@ class Component extends DCLogic {
       campShort: camp.short,
       campInitials: this.initials(camp.short),
       claimed: s.claimed, notClaimed: !s.claimed,
+      isLocked: !s.claimed,
+      lockTeaser: camp.alumni.toLocaleString("en-IN") + " alumni as counts sit in Pulse for this campus. Company seats, who is on Pulse, and live roles stay closed until this office is verified.",
       looks: s.looks,
-      fuelLabel: s.looks <= 0 ? "Out" : "Sees",
+      fuelLabel: s.looks <= 0 ? "Out" : "Pulse",
       fuelPips: Array.from({ length: this.looksMax() }, (_, i) => ({
         bg: i < s.looks ? "#3ad6c9" : "transparent",
         ring: i < s.looks ? "none" : "inset 0 0 0 1px #c9d6db"
       })),
-      onFuel: () => { if (s.looks <= 0) this.setState({ overlay: "empty" }); else this.showToast(s.looks + " request" + (s.looks === 1 ? "" : "s") + " left today. The faded graph is free."); },
+      onFuel: () => { if (s.looks <= 0) this.setState({ overlay: "empty" }); else this.showToast(s.looks + " Pulse message" + (s.looks === 1 ? "" : "s") + " left today. Alumni stay unnamed until they answer."); },
       inboxLabel: (() => { const f = s.inbox.filter(i => i.status === "replied").length; const w = s.inbox.filter(i => i.status === "asked").length; return "Inbox" + (f ? " \u00b7 " + f + " new" : w ? " \u00b7 " + w : ""); })(),
       inboxBorder: s.inbox.some(i => i.status === "replied") ? "rgba(8,164,184,0.5)" : "#2a2a2a",
       inboxColor: s.inbox.some(i => i.status === "replied") ? "#08a4b8" : "#fcfcfc",
       onInbox: () => this.setState({ overlay: "inbox" }),
       onNextDay: () => this.nextDay(),
       onReset: () => { try { localStorage.removeItem(this.STORAGE); } catch (e) {} this._empCache = {}; this.setState(this.defaults()); },
-      showMomentum: (this.props.showMomentum ?? true) !== false,
+      showMomentum: s.claimed && (this.props.showMomentum ?? true) !== false,
       momentumPct: pct, milestone, flash: s.flash || false,
       gridCols: sideOpen ? "0.82fr 1.18fr" : "1fr",
       gridAlign: sideOpen ? "stretch" : "center",
@@ -994,7 +1050,7 @@ class Component extends DCLogic {
           const atCo = s.inspectCompany === p.company;
           return {
             left: pos.left, top: pos.top,
-            label: p.role + " at " + p.company + ". " + (this.isOpen(p) ? p.name : "Name sealed") + ". Open to ask on Pulse.",
+            label: p.role + " at " + p.company + ". Alumni on Pulse. Open to message.",
             dotBg: on || atCo ? "#08a4b8" : "#7a9198",
             dotShadow: on ? "0 0 0 5px rgba(8,164,184,0.22), 0 0 14px rgba(8,164,184,0.7)" : atCo ? "0 0 0 3px rgba(8,164,184,0.18)" : "none",
             dotScale: on ? "scale(1.7)" : atCo ? "scale(1.2)" : "scale(1)",
@@ -1029,13 +1085,13 @@ class Component extends DCLogic {
           open: () => this.openCompany(co.name)
         };
       }),
-      coCountLine: emp.companyCount + " employers \u00b7 teal tiles have someone you can ask",
+      coCountLine: emp.companyCount + " employers \u00b7 teal tiles have an alumni seat you can message",
       howSteps: (() => {
         let on = "company";
         if (inspecting && !person) on = "who";
-        if (person && !open) on = "reveal";
-        if ((person && open) || s.askOpen) on = "ask";
-        return [["company", "1 \u00b7 Click a company"], ["who", "2 \u00b7 See who"], ["reveal", "3 \u00b7 Reveal the name"], ["ask", "4 \u00b7 Ask on Pulse"]].map(([id, label]) => ({
+        if (person && !s.askOpen) on = "who";
+        if (s.askOpen || (person && this.state.inbox.some(i => i.key === this.personKey(person)))) on = "ask";
+        return [["company", "1 \u00b7 Company"], ["who", "2 \u00b7 Alumni seats"], ["ask", "3 \u00b7 Pulse message"]].map(([id, label]) => ({
           label,
           color: id === on ? "#e8f4f4" : "#5c6e74",
           border: id === on ? "rgba(8,164,184,0.55)" : "#212121",
@@ -1046,27 +1102,26 @@ class Component extends DCLogic {
       pingFeed: s.pings.map((p, i) => ({ label: p.label, time: p.time, opacity: 1 - i * 0.28 })),
       hasToday: s.today.length > 0,
       today: s.today.map(t => ({
-        name: t.name,
-        initials: window.personInitials(t.name),
-        sub: t.company + (t.status === "asked" ? " \u00b7 Asked" : t.status === "replied" ? " \u00b7 Replied" : ""),
+        name: t.display || t.role || "Alumni seat",
+        initials: String(t.role || "A").split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase(),
+        sub: t.company + (t.status === "asked" ? " \u00b7 Sent" : t.status === "replied" ? " \u00b7 Replied" : ""),
         border: t.status === "replied" ? "rgba(61,214,140,0.5)" : t.status === "asked" ? "rgba(8,164,184,0.45)" : "#212121",
         open: () => this.openPerson(t.company, t.role, t.name)
       })),
       caption: (() => {
         if (s.jobsOpen) return "Live roles at employers your people already staff. Internship rows are a snapshot, not a live Internshala feed.";
-        if (!inspecting) return "Teal tiles already have someone on Pulse. Click one \u2014 see the seat, reveal the name, ask them.";
-        if (!person) return "No one on Pulse at this company yet. Open a teal tile to see who you can ask.";
-        if (s.claimStep === "form") return "Claim the office to see this name, then ask them on Pulse.";
-        if (s.askOpen) return "Edit if you want. Send with Pulse. They choose whether to answer.";
-        if (open) return "This is the person. Ask them on Pulse.";
-        return "The seat is visible. Reveal the name to open the message.";
+        if (!inspecting) return "Click a company. See alumni as seats \u2014 role, batch, city \u2014 never a legal name. Message them on Pulse.";
+        if (!person) return "Alumni on Pulse at this company, without names. Open jobs sit next to the seats.";
+        if (s.askOpen) return "Pulse carries this inside the product. They choose whether to answer.";
+        return "This is a seat, not a name. Send a hello on Pulse. HR / pipeline is a later ask, after they reply.";
       })(),
       onCloseInspect: () => this.set({ inspectCompany: null, inspectName: null, inspectRole: null, claimStep: null, askOpen: false }),
       onCloseJobs: () => this.set({ jobsOpen: false }),
       onCloseOverlay: () => this.setState({ overlay: null }),
       onCloseAsk: () => this.set({ askOpen: false }),
-      onOpenAsk: () => this.set({ askOpen: true }),
-      onReveal: () => this.reveal(),
+      onOpenAsk: () => this.startConnect(),
+      onOpenHr: () => this.set({ askOpen: true, askKind: "hr" }),
+      onReveal: () => this.startConnect(),
       onSendAsk: () => this.sendAsk(),
       onPrev: () => this.step(-1),
       onNext: () => this.step(1),
@@ -1127,8 +1182,8 @@ class Component extends DCLogic {
         const it = s.inbox.find(i => i.key === s.inboxOpenKey);
         if (!it) return {};
         return {
-          name: it.name, initials: window.personInitials(it.name),
-          firstName: it.name.split(/\s+/)[0],
+          name: it.display || (it.role + " \u00b7 " + it.company), initials: String(it.role || "A").split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase(),
+          firstName: "this alumnus",
           sub: it.role + " \u00b7 " + it.company,
           askedDay: it.askedDay, replyDay: it.askedDay + 1,
           askText: it.askText || "Ask sent via Pulse.",
@@ -1136,27 +1191,27 @@ class Component extends DCLogic {
           reply: it.reply,
           nudgeLabel: s.nudged.includes(it.key) ? "Nudged \u00b7 Pulse will remind them once" : "Nudge (demo)",
           onNudge: () => { if (!s.nudged.includes(it.key)) { this.set({ nudged: [...s.nudged, it.key] }); this.showToast("Pulse will remind them once. No spam."); } },
-          onSendProfiles: () => { this.setState({ overlay: null, inboxOpenKey: null }); this.gain("invites", 1); this.showToast("2 profiles queued. " + it.name.split(/\s+/)[0] + " gets them via Pulse."); }
+          onSendProfiles: () => { this.setState({ overlay: null, inboxOpenKey: null }); this.gain("invites", 1); this.showToast("2 profiles queued. Pulse will carry them to this alumnus."); }
         };
       })(),
       inbox: s.inbox.map(i => {
         const mk = mark(i.company);
         return {
-          name: i.name, markBg: mk.bg, initials: mk.initials, logoDomain: logoDomain(i.company),
+          name: i.display || (i.role + " \u00b7 " + i.company), markBg: mk.bg, initials: mk.initials, logoDomain: logoDomain(i.company),
           sub: i.role + " \u00b7 " + i.company + " \u00b7 " + (i.status === "replied" ? "Replied" : "Waiting"),
           reply: i.reply || false,
           open: () => this.setState({ inboxOpenKey: i.key })
         };
       }),
       day: s.day,
-      dropHeadline: this.looksMax() + " fresh looks landed.",
+      dropHeadline: this.looksMax() + " Pulse messages landed.",
       dropLine: (() => {
         const rep = s.inbox.filter(i => i.status === "replied").length;
         return (rep ? rep + " repl" + (rep === 1 ? "y" : "ies") + " waiting in the inbox. " : "") + "Names refill at midnight IST. Live roles stayed visible overnight.";
       })(),
-      emptyLine: this.looksMax() + " names refill at midnight IST. Live roles stay visible. An Ask may have an answer.",
-      isRadarView: s.view !== "report",
-      isReportView: s.view === "report",
+      emptyLine: this.looksMax() + " Pulse messages refill at midnight IST. Live roles stay visible. A hello may already have an answer.",
+      isRadarView: s.claimed && s.view !== "report",
+      isReportView: s.claimed && s.view === "report",
       onToggleView: () => this.set({ view: s.view === "report" ? "radar" : "report", inspectCompany: null, jobsOpen: false, askOpen: false }),
       reportBtnLabel: s.view === "report" ? "Radar" : "Report",
       reportBtnBg: s.view === "report" ? "rgba(8,164,184,0.12)" : "transparent",
@@ -1310,23 +1365,25 @@ class Component extends DCLogic {
           coInitials: mark(person.company).initials,
           markBg: mark(person.company).bg,
           logoDomain: logoDomain(person.company),
-          initials: window.personInitials(person.name),
-          name: person.name,
+          initials: this.roleInitials(person),
+          name: "Alumni on Pulse",
           nAtCo: co ? co.n : list.length,
           nAtRole,
           posOfTotal: (s.inspectIndex + 1) + "/" + list.length,
-          showClaim: s.claimStep === "form",
-          showAsk: s.askOpen && open && !s.claimStep,
-          showSealed: !open && !s.claimStep,
-          showOpen: open && !s.askOpen && !s.claimStep,
-          canAsk: open && !asked && !replied,
-          askPrompt: "This is the person. Ask them on Pulse to brief 2027.",
-          askLabel: "Ask " + person.name.split(/\s+/)[0] + " on Pulse",
+          showClaim: false,
+          showAsk: s.askOpen && !s.claimStep,
+          showSealed: !s.askOpen && !asked && !replied && !s.claimStep,
+          showOpen: !s.askOpen && (asked || replied) && !s.claimStep,
+          canAsk: !asked && !replied,
+          canHr: replied && ((s.inbox.find(i => i.key === this.personKey(person)) || {}).kind !== "hr"),
+          askPrompt: "Hello on Pulse. No name required.",
+          askLabel: "Message on Pulse",
+          askKindLine: (s.askKind === "hr") ? "This is the HR / pipeline ask." : "This is a general hello.",
           askNote: this.askDraft(person),
-          revealLabel: !s.claimed ? "Claim office to reveal and ask" : (s.looks < 1 ? "Out of looks today" : "Reveal name to ask \u00b7 " + s.looks + " left today"),
+          revealLabel: s.looks < 1 ? "Out of Pulse messages today" : "Message on Pulse \u00b7 " + s.looks + " left today",
           seatLine: person.role + " at " + person.company + " \u00b7 " + (match ? match.ctc : "Band varies") + " \u00b7 " + person.city,
           seatSub: nAtRole + " in this seat \u00b7 " + (co ? co.n : 0) + " " + camp.short + " alumni here \u00b7 brief 2027 " + (person.dept !== "Other" ? person.dept : camp.departments[0][0]),
-          statusLine: replied ? "They replied. Brief 2027 or invite the match." : asked ? "Asked. Pulse is delivering. They choose whether to answer." : false,
+          statusLine: replied ? "They replied. You can now ask on Pulse for an HR intro or two profiles." : asked ? "Hello sent. Pulse is delivering. They choose whether to answer." : false,
           hasLive: live.length > 0 && !s.claimStep && !s.askOpen,
           live: live.slice(0, 3).map(j => ({
             title: j.title,
@@ -1351,12 +1408,12 @@ class Component extends DCLogic {
             topRoleN: co.roles[0][1], topRoleLabel: "in " + co.roles[0][0],
             liveN: live.length, onPulseN: onP.length,
             hasWho: onP.length > 0, noWho: onP.length === 0,
-            noWhoLine: "Nobody from this campus is on Pulse at " + co.name + " yet. Teal company tiles already have someone you can reveal and ask.",
+            noWhoLine: "Nobody from this campus is on Pulse at " + co.name + " yet. Teal tiles already have a seat you can message.",
             who: onP.slice(0, 6).map(p => ({
-              initials: window.personInitials(p.name),
-              display: this.isOpen(p) ? p.name : "Name sealed",
-              sub: p.role + " \u00b7 " + p.dept + " \u00b7 class of " + p.year + " \u00b7 " + p.city,
-              go: this.isOpen(p) ? "Ask" : "Reveal",
+              initials: this.roleInitials(p),
+              display: p.role,
+              sub: p.dept + " \u00b7 class of " + p.year + " \u00b7 " + p.city,
+              go: "Message",
               open: () => this.openPerson(p.company, p.role, p.name)
             })),
             roles: co.roles.slice(0, 4).map(([role, n]) => ({ role, n })),

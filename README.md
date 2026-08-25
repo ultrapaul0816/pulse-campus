@@ -24,15 +24,15 @@ Copy must stay honest: Pulse can see **counts** from public professional profile
 
 ## First-session loop (this is the product)
 
-1. **Which campus** — search, pick a college (NIT Trichy is the default demo).
-2. **Radar** — 27 employers as dots. Sharp logos live in the dock under the radar, with a headcount under each tile. **Teal-ringed tiles already have someone on Pulse.**
-3. **Click a company** (dock or radar). If anyone from this campus is on Pulse there, the side card opens **that person**, not a job board.
-4. **See who** — even while the legal name is sealed you can identify the seat: role, city, department, class year.
-5. **Reveal the name** — first time, claim the placement office; after that, spend a **look** (3 per campus per day).
-6. **Ask on Pulse** — the message composer opens on reveal. Pulse writes, the TPO sends, Pulse delivers. Not college email. Not LinkedIn-primary. Not auto-mail.
-7. **Inbox** — replies (demo: advance a day). **Today** tray holds who you looked at.
+1. **Which campus** — search, pick a college.
+2. **Claim the office** — work email. A guest does **not** get another university’s graph.
+3. **Radar** — employers as dots, logos in the dock. Teal tiles have someone on Pulse.
+4. **Click a company** — alumni as **seats** (role, branch, class year, city). **No legal names.** Live jobs sit next to the seats.
+5. **Hello on Pulse** — general connect, 3 messages/day, inside the product. Not college email. Not LinkedIn.
+6. **After they reply** — a second Pulse ask: HR intro / two profiles / placement pipeline.
+7. **Inbox** — threads stay unnamed. **Next day** (demo) lands replies.
 
-Four chips under the dock track the step: *Click a company → See who → Reveal the name → Ask on Pulse*.
+Four chips: *Company → Alumni seats → Pulse message*.
 
 ### Cold start vs this mock
 
