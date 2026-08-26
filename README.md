@@ -55,6 +55,7 @@ For the **clickable demo**, the mock seeds a few people as already on Pulse at t
 | 2027 vs 2026 | Brief 2027. 2026 is incomplete. |
 | Names | Never invent. Demo names are synthesised in `graph.js` and only visible when their key is in `state.onPulse`. |
 | LinkedIn person-search | Rejected (accuracy + DPDP + TPO work). |
+| Radar views | **Signal** (default) = activity + availability. **Distance** (free toggle) = real km from campus to each employer's nearest known site, north up, log rings at 10/50/250/1,000 km; the ≤50/≤250 km range filter is **Pro**. Site coordinates come from the College Catchment Explorer dataset plus curated city-level sites for majors (`app/geo.js`) — distances are real, never invented; a company with no geo record sits dimmed at the rim as "location unverified". |
 | Visual | Grok-dark UI, Cognavi teal `#08a4b8`. Radar dots, not logos (logos clip/blur on the sweep). Dock logos sit in white padded tiles; tiny favicons fall back to initials. |
 
 ---
@@ -88,6 +89,7 @@ app/index.html    Vanilla IIFE SPA (previous implementation)
 app/styles.css    Grok dark + teal
 app/data.js       14 colleges, employer counts, jobs j1–j27 (some intern: true)
 app/graph.js      buildEmployment, role books, COMPANY_DOMAINS, logoHTML / logoSrc
+app/geo.js        campus + company-site coordinates, haversine/bearing, nearestSite (distance radar view)
 app/logos/        local PNG marks (`{domain}.png`) — used by prototype and SPA
 app/app.js        IIFE SPA. STORAGE = pulse-campus:tpo:v8. LOOKS_MAX = 3
 prototype/HANDOFF.md   Notes from the design drop (momentum, tape, daily drop, inbox)
@@ -108,6 +110,7 @@ mood.md / voice.md / tokens.md   Prototype brand, copy, and design-system guidan
 - **Pro action panel** — company and job evidence remain free; Pro turns the selected evidence into a coordinated review plan
 - **AI preparation** — simulated stages read evidence, draft distinct alumni introductions, add an exact-job batch opportunity brief, then expose selected/skipped review rows; this step never sends
 - **Signal acquisition** — inspectors and dialogs resolve through a one-shot 280ms radar lock/beam; reduced motion receives a restrained fade
+- **Distance radar** — Signal/Distance toggle above the radar; Distance plots each employer at its real bearing and log-scaled km from the campus (nearest site, site type shown in the inspector), with a Pro-gated range filter and in-range count
 - **Campus report** — sector mix, cities, CTC bands, principal brief
 - **Inbox** — threads, timestamps, Send 2 profiles, Nudge
 - **Job evidence** — exact role and stream, then Connect 2027 batch evidence or Copy role brief
@@ -146,6 +149,7 @@ mood.md / voice.md / tokens.md   Prototype brand, copy, and design-system guidan
 - Counts are illustrative of Pulse affinity, not a production dump.
 - LinkedIn jobs intelligence exists in Cognavi’s world (~7k/day historically); this mock does not call S3.
 - Internshala internship rows are a snapshot. Label them as such.
+- Distance-view coordinates are city/site-level (catchment dataset + curated majors), so distances are real to within a few km — good enough for "can we run a drive there", not for routing.
 - NIRF-flavoured college list. No Japanese employers as the campus graph (Japan corridor is a hiring *destination* for some people, not the employer set on Indian campuses).
 
 ---

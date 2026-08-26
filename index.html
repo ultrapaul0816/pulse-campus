@@ -180,6 +180,7 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
 <script>window.hideImg=function(e){var t=(e&&e.target)||e;if(t&&t.style)t.style.display="none"};setInterval(function(){document.querySelectorAll("img[data-logo]").forEach(function(im){var d=im.getAttribute("data-logo");if(!d||d.indexOf("{")>=0||d.indexOf(".")<0)return;if(im.dataset.bound===d)return;im.dataset.bound=d;im.dataset.fb="";im.style.display="";im.onerror=function(){if(!im.dataset.fb){im.dataset.fb="1";im.src="https://www.google.com/s2/favicons?sz=128&domain="+d;}else{im.style.display="none";}};im.onload=function(){if(im.naturalWidth&&im.naturalWidth<24)im.onerror();};im.src=(window.logoSrc?window.logoSrc(d):"./app/logos/"+d+".png");});},400);</script>
 <script src="./app/data.js?v=20260826-final-fix"></script>
 <script src="./app/graph.js"></script>
+<script src="./app/geo.js?v=20260826-distance-2"></script>
 </helmet>
 <div class="pulse-root {{ reduceMotionClass }}" style="font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.5;letter-spacing:-0.011em">
 
@@ -393,10 +394,22 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
     <sc-if value="{{ isRadarView }}" hint-placeholder-val="{{ true }}">
     <div style="display:grid;gap:28px;padding:8px 0 96px;grid-template-columns:{{ gridCols }};align-items:{{ gridAlign }};justify-items:{{ gridJustify }}">
       <div class="radar-stage" style="display:grid;place-items:center;align-content:start">
-        <div style="width:min(420px,90%);aspect-ratio:1;position:relative;border-radius:50%;background:repeating-radial-gradient(circle at 50% 50%, transparent 0 11.6%, rgba(255,255,255,0.05) 12% 12.3%),radial-gradient(circle at 50% 50%, #141414 0%, #050505 70%);box-shadow:0 0 0 1px #3f3f46;overflow:hidden">
+        <div role="group" aria-label="Radar view" style="display:flex;gap:6px;justify-content:center;margin:0 0 10px">
+          <sc-for list="{{ radarToggle }}" as="rt" hint-placeholder-count="0">
+            <button type="button" onClick="{{ rt.pick }}" aria-pressed="{{ rt.active }}" style="border:1px solid #212121;padding:6px 14px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;background:{{ rt.bg }};color:{{ rt.color }}">{{ rt.label }}</button>
+          </sc-for>
+        </div>
+        <div style="width:min(420px,90%);aspect-ratio:1;position:relative;border-radius:50%;background:{{ radarStageBg }};box-shadow:0 0 0 1px #3f3f46;overflow:hidden">
           <div class="radar-sweep" data-radar-sweep style="position:absolute;inset:0;background:conic-gradient(from 0deg, transparent 0 74%, rgba(255,255,255,0.04) 88%, rgba(8,164,184,0.5) 100%);animation:sweep 3.4s linear infinite"></div>
           <div style="position:absolute;left:50%;top:8%;bottom:8%;width:1px;background:rgba(255,255,255,0.08)"></div>
           <div style="position:absolute;top:50%;left:8%;right:8%;height:1px;background:rgba(255,255,255,0.08)"></div>
+          <sc-for list="{{ distRings }}" as="dr" hint-placeholder-count="0">
+            <span aria-hidden="true" style="position:absolute;inset:{{ dr.inset }};border-radius:50%;border:1px solid rgba(255,255,255,0.09);pointer-events:none;z-index:1"></span>
+            <span aria-hidden="true" style="position:absolute;left:50%;bottom:{{ dr.inset }};transform:translate(-50%,50%);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#5c6e74;background:#050505;padding:0 5px;border-radius:4px;pointer-events:none;z-index:2">{{ dr.label }}</span>
+          </sc-for>
+          <sc-if value="{{ isDistanceRadar }}" hint-placeholder-val="{{ false }}">
+            <span aria-hidden="true" style="position:absolute;left:50%;top:2.2%;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.14em;color:#3ad6c9;pointer-events:none;z-index:2">N</span>
+          </sc-if>
           <sc-for list="{{ radarCos }}" as="rc" hint-placeholder-count="0">
             <button class="radar-target" type="button" disabled="{{ rc.disabled }}" onClick="{{ rc.open }}" aria-label="{{ rc.label }}" style="position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;padding:0;border:0;background:transparent;z-index:5;left:{{ rc.left }}%;top:{{ rc.top }}%;opacity:{{ rc.opacity }}">
               <span style="display:block;width:7px;height:7px;margin:7.5px auto;border-radius:50%;background:{{ rc.dotBg }};box-shadow:{{ rc.dotShadow }};transform:{{ rc.dotScale }}"></span>
@@ -422,6 +435,15 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
           </sc-for>
           <div style="position:absolute;inset:42%;border-radius:50%;background:#0a2229;border:1px solid rgba(58,214,201,0.45);display:grid;place-items:center;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#08a4b8;z-index:3">{{ campInitials }}</div>
         </div>
+
+        <sc-if value="{{ isDistanceRadar }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;margin-top:10px">
+            <sc-for list="{{ rangeChips }}" as="rg" hint-placeholder-count="0">
+              <button type="button" onClick="{{ rg.pick }}" style="border:1px solid #212121;padding:5px 12px;border-radius:999px;font-size:12px;background:{{ rg.bg }};color:{{ rg.color }}">{{ rg.label }}</button>
+            </sc-for>
+          </div>
+          <p style="margin:8px 0 0;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.06em;color:#5c6e74">{{ rangeNote }}</p>
+        </sc-if>
 
         <div class="company-dock" style="display:grid;grid-template-columns:repeat(6,44px);justify-content:center;gap:7px 9px;margin-top:14px;max-width:min(520px,100%)">
           <sc-for list="{{ dock }}" as="dk" hint-placeholder-count="0">
@@ -608,6 +630,9 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
               <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6;margin-bottom:8px">{{ cp.typeName }}</div>
               <h2 style="font-size:28px;letter-spacing:-0.04em;margin:2px 0 4px">{{ cp.name }}</h2>
               <p style="margin:0;color:#9e9e9e;font-size:14px">Where yours already sit</p>
+              <sc-if value="{{ cp.siteLine }}" hint-placeholder-val="{{ false }}">
+                <p style="margin:5px 0 0;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.05em;color:#8aa0a6">{{ cp.siteLine }}</p>
+              </sc-if>
             </div>
             <button class="target-close" type="button" onClick="{{ onCloseInspect }}" aria-label="Close" style="width:32px;height:32px;border:1px solid #2a2a2a;background:transparent;color:#9e9e9e;border-radius:999px;font-size:18px;line-height:1" style-hover="color:#fcfcfc">&times;</button>
           </div>
@@ -1282,7 +1307,7 @@ class Component extends DCLogic {
       planStage: null, planStep: null, planItems: [], planCompany: null, planJobId: null, sendItems: [], batchOutcomes: [],
       liveArrivals: [], pendingJobIds: [], newJobId: null,
       bulkOpen: false, bulkSelected: [],
-      view: "radar", inboxOpenKey: null, sheetUploaded: false, matchJobId: null, joined: 0, nudged: [],
+      view: "radar", radarView: "signal", rangeKm: 0, inboxOpenKey: null, sheetUploaded: false, matchJobId: null, joined: 0, nudged: [],
       m: { visits: [], reveals: 0, asks: 0, replies: 0, invites: 0 },
       pings: [], pingNow: null, flash: "", milestoneCue: false, inspectorEnter: false
     };
@@ -1903,6 +1928,36 @@ class Component extends DCLogic {
     else if (index >= 8) { ring = 34; local = index - 8; ringN = Math.min(12, total - 8); }
     return this.polar(local, ringN, ring, 0.1);
   }
+  // Distance view: real km from campus to the company's nearest known site.
+  distGeo(name) {
+    return window.PULSE_GEO ? window.PULSE_GEO.nearestSite(name, this.state.collegeId) : null;
+  }
+  // Log ring scale (base 5 from 10 km): 10 / 50 / 250 / 1000 km land on radii 17 / 26.7 / 36.3 / 44.7.
+  distRadius(km) {
+    const r = 17 + 9.6667 * (Math.log(Math.max(km, 1.5) / 10) / Math.log(5));
+    return Math.max(12.5, Math.min(46, r));
+  }
+  // Deterministic per-company jitter so same-city sites don't stack on one point.
+  distJitter(name) {
+    let h = 0; const str = String(name);
+    for (let i = 0; i < str.length; i += 1) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+    return { a: ((Math.abs(h) % 21) - 10) * 0.014, r: ((Math.abs(h >> 5) % 13) - 6) * 0.24 };
+  }
+  // North is up: bearing 0° = top of the radar.
+  distPos(geo, name) {
+    const j = this.distJitter(name);
+    const a = (geo.bearing - 90) * Math.PI / 180 + j.a;
+    const r = Math.max(11, Math.min(47, this.distRadius(geo.km) + j.r));
+    return { left: 50 + r * Math.cos(a), top: 50 + r * Math.sin(a) };
+  }
+  fmtKm(km) {
+    if (km < 1) return "<1";
+    if (km < 10) return String(Math.round(km * 10) / 10);
+    return Math.round(km).toLocaleString("en-IN");
+  }
+  distLine(geo) {
+    return this.fmtKm(geo.km) + " km · " + (geo.type || "site") + (geo.city ? ", " + geo.city : "");
+  }
   landingDots() {
     const nodes = []; let i = 0;
     for (let ring = 1; ring <= 4; ring += 1) {
@@ -1971,7 +2026,7 @@ class Component extends DCLogic {
     base.collegeResults = (q ? window.PULSE_CAMPUS.colleges.filter(c => (c.name + " " + c.short + " " + c.city).toLowerCase().includes(q)) : window.PULSE_CAMPUS.colleges.slice(0, 8)).map(c => ({
       short: c.short,
       sub: c.city + " \u00b7 NIRF " + c.nirf + " \u00b7 " + c.alumni + " alumni records",
-      pick: () => { this.clearOnboardingTimers(); this.clearPlanTimers(); this._empCache = {}; this.set({ collegeId: c.id, query: c.short, searchOpen: false, scene: "campus", claimed: false, claimStep: "form", onboardingStage: null, validationStep: 0, claimError: "", inspectCompany: null, inspectName: null, inspectRole: null, onPulse: [], inbox: [], today: [], unlocked: [], askOpen: false, jobsOpen: false, overlay: null, view: "radar", planStage: null, planStep: null, planItems: [], planCompany: null, planJobId: null, sendItems: [], batchOutcomes: [] }, () => { window.scrollTo(0, 0); }); }
+      pick: () => { this.clearOnboardingTimers(); this.clearPlanTimers(); this._empCache = {}; this.set({ collegeId: c.id, query: c.short, searchOpen: false, scene: "campus", claimed: false, claimStep: "form", onboardingStage: null, validationStep: 0, claimError: "", inspectCompany: null, inspectName: null, inspectRole: null, onPulse: [], inbox: [], today: [], unlocked: [], askOpen: false, jobsOpen: false, overlay: null, view: "radar", radarView: "signal", rangeKm: 0, planStage: null, planStep: null, planItems: [], planCompany: null, planJobId: null, sendItems: [], batchOutcomes: [] }, () => { window.scrollTo(0, 0); }); }
     }));
     if (!base.isCampus) return base;
 
@@ -1988,6 +2043,9 @@ class Component extends DCLogic {
     const companyDirectoryOpen = s.overlay === "companies";
     const pct = this.momentumPct(s.m);
     const milestone = pct >= 100 ? "Placement engine" : pct >= 75 ? "Batch briefed" : pct >= 50 ? "Warm paths open" : pct >= 25 ? "Office warm" : person ? "Message this contact" : inspecting ? "Choose an alumnus" : "Open a company";
+    const distanceView = s.radarView === "distance";
+    const geoOf = (name) => distanceView ? this.distGeo(name) : null;
+    const inRange = (geo) => !distanceView || s.rangeKm <= 0 || (!!geo && geo.km <= s.rangeKm);
 
     const vals = {
       ...base,
@@ -2026,19 +2084,23 @@ class Component extends DCLogic {
       gridJustify: sideOpen ? "stretch" : "center",
       sideOpen,
       radarCos: emp.companies.map((co, idx, all) => {
-        const pos = this.coPos(idx, all.length);
+        const geo = geoOf(co.name);
+        const pos = distanceView
+          ? (geo ? this.distPos(geo, co.name) : this.polar(idx, all.length, 48, 0.14))
+          : this.coPos(idx, all.length);
         const on = this.sameCompany(s.inspectCompany, co.name) && !s.inspectName;
         const ping = !!(s.pingNow && this.sameCompany(s.pingNow.company, co.name));
+        const outOfRange = !inRange(geo);
         return {
           left: pos.left, top: pos.top,
-          label: co.n + " alumni counts at " + co.name,
+          label: co.n + " alumni counts at " + co.name + (distanceView ? (geo ? " — " + this.distLine(geo) : " — site location unverified") : ""),
           dotBg: on || ping ? "#08a4b8" : "#6d838a",
           dotShadow: on ? "0 0 0 5px rgba(8,164,184,0.22), 0 0 12px rgba(8,164,184,0.55)" : ping ? "0 0 10px rgba(8,164,184,0.7)" : "none",
           dotScale: on ? "scale(1.7)" : "scale(1)",
-          opacity: inspecting && !on ? 0.32 : 1,
+          opacity: outOfRange ? 0.1 : inspecting && !on ? 0.32 : distanceView && !geo ? 0.35 : 1,
           on, ping,
           pingLabel: ping && s.pingNow ? s.pingNow.short : "",
-          disabled: this.navigationLocked(),
+          disabled: this.navigationLocked() || outOfRange,
           open: () => this.openCompany(co.name)
         };
       }),
@@ -2047,24 +2109,73 @@ class Component extends DCLogic {
         emp.companies.forEach(co => co.people.forEach(p => { if (s.onPulse.includes(p.key) && mixed.length < 26) mixed.push(p); }));
         return mixed.map((p, idx) => {
           const ring = 22 + (idx % 3) * 8;
-          const pos = this.polar(idx, mixed.length, ring, 0.08);
+          const geo = geoOf(p.company);
+          let pos;
+          if (distanceView && geo) {
+            const base = this.distPos(geo, p.company);
+            const pa = idx * 2.399;
+            pos = { left: base.left + 2.7 * Math.cos(pa), top: base.top + 2.7 * Math.sin(pa) };
+          } else if (distanceView) {
+            pos = this.polar(idx, mixed.length, 48, 0.3);
+          } else {
+            pos = this.polar(idx, mixed.length, ring, 0.08);
+          }
+          const outOfRange = !inRange(geo);
           const on = person && this.sameCompany(person.company, p.company) && person.name === p.name && person.role === p.role;
           const atCo = this.sameCompany(s.inspectCompany, p.company);
           return {
             left: pos.left, top: pos.top,
-            label: p.role + " at " + p.company + ". Alumnus available on Pulse. Open to message.",
+            label: p.role + " at " + p.company + ". Alumnus available on Pulse. Open to message." + (distanceView && geo ? " " + this.distLine(geo) + "." : ""),
             dotBg: on || atCo ? "#08a4b8" : "#7a9198",
             dotShadow: on ? "0 0 0 5px rgba(8,164,184,0.22), 0 0 14px rgba(8,164,184,0.7)" : atCo ? "0 0 0 3px rgba(8,164,184,0.18)" : "none",
             dotScale: on ? "scale(1.7)" : atCo ? "scale(1.2)" : "scale(1)",
             dotOpacity: on ? 1 : atCo ? 0.95 : 0.55,
-            opacity: inspecting && !atCo ? 0.28 : 1,
+            opacity: outOfRange ? 0.1 : inspecting && !atCo ? 0.28 : 1,
             on,
-            disabled: this.navigationLocked(),
+            disabled: this.navigationLocked() || outOfRange,
             open: () => this.sameCompany(s.inspectCompany, p.company) && !person
               ? this.openPerson(p.company, p.role, p.name)
               : this.openCompany(p.company)
           };
         });
+      })(),
+      isDistanceRadar: distanceView,
+      radarStageBg: distanceView
+        ? "radial-gradient(circle at 50% 50%, #101416 0%, #050505 72%)"
+        : "repeating-radial-gradient(circle at 50% 50%, transparent 0 11.6%, rgba(255,255,255,0.05) 12% 12.3%),radial-gradient(circle at 50% 50%, #141414 0%, #050505 70%)",
+      distRings: distanceView ? [
+        { inset: "33%", label: "10" },
+        { inset: "23.33%", label: "50" },
+        { inset: "13.67%", label: "250" },
+        { inset: "5.33%", label: "1,000 km" }
+      ] : [],
+      radarToggle: [
+        { label: "Signal", active: !distanceView, view: "signal" },
+        { label: "Distance", active: distanceView, view: "distance" }
+      ].map(t => ({
+        label: t.label, active: t.active,
+        bg: t.active ? "#212121" : "transparent",
+        color: t.active ? "#fcfcfc" : "#9e9e9e",
+        pick: () => this.set({ radarView: t.view })
+      })),
+      rangeChips: distanceView ? [
+        { label: "All", km: 0 }, { label: "≤ 50 km", km: 50 }, { label: "≤ 250 km", km: 250 }
+      ].map(c => {
+        const active = s.rangeKm === c.km;
+        const locked = !s.pro && c.km > 0;
+        return {
+          label: locked ? c.label + " · Pro" : c.label,
+          bg: active ? "#212121" : "transparent",
+          color: active ? "#fcfcfc" : locked ? "#6d838a" : "#9e9e9e",
+          pick: () => { if (locked) { this.setState({ overlay: "pro" }); return; } this.set({ rangeKm: c.km }); }
+        };
+      }) : [],
+      rangeNote: (() => {
+        if (!distanceView) return "";
+        const withGeo = emp.companies.filter(c => { const g = this.distGeo(c.name); return g && (s.rangeKm <= 0 || g.km <= s.rangeKm); }).length;
+        return s.rangeKm > 0
+          ? withGeo + " employers within " + s.rangeKm + " km · north is up"
+          : "Nearest site to campus · north is up";
       })(),
       echoes: (() => {
         if (!s.pingNow) return [];
@@ -2689,6 +2800,7 @@ class Component extends DCLogic {
             typeName: type ? type.name : "Employer",
             initials: mark(co.name).initials, markBg: mark(co.name).bg, logoDomain: logoDomain(co.name),
             countLine: camp.short + " alumni work here",
+            siteLine: (() => { const g = this.distGeo(co.name); return g ? "Nearest site: " + (g.type || "site") + " in " + g.city + " · " + this.fmtKm(g.km) + " km from campus" : ""; })(),
             topRoleN: co.roles[0][1], topRoleLabel: "in " + co.roles[0][0],
             liveN: live.length, onPulseN: onP.length,
             availableLabel: onP.length === 1 ? "alumnus available" : "alumni available",
