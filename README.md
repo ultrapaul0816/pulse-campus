@@ -16,7 +16,7 @@ The root page is the design-canvas prototype (`index.html` + `support.js`) with 
 
 Placement **via alumni**, not “an alumni network.”
 
-Where last year’s batch works → use them for this year’s. **2027 is the batch to brief.** 2026 status is still incomplete — do not pretend it is ready.
+Find the path from campus evidence to a company action. See where alumni work, understand why roles fit, and coordinate reviewed outreach. **2027 is the batch to brief.** 2026 status is still incomplete — do not pretend it is ready.
 
 Copy must stay honest: Pulse can see **counts** from public professional profiles, and **names** only for people who joined Pulse. Do not say companies are chasing the campus. Do not invent PII. Do not send the TPO to LinkedIn hunt.
 
@@ -24,15 +24,15 @@ Copy must stay honest: Pulse can see **counts** from public professional profile
 
 ## First-session loop (this is the product)
 
-1. **Which campus** — search, pick a college.
-2. **Claim the office** — work email. A guest does **not** get another university’s graph.
-3. **Radar** — employers as dots, logos in the dock. Teal tiles have someone on Pulse.
-4. **Click a company** — alumni as **seats** (role, branch, class year, city). **No legal names.** Live jobs sit next to the seats.
-5. **Hello on Pulse** — general connect, 3 messages/day, inside the product. Not college email. Not LinkedIn.
+1. **Find the campus path** — search and pick a college from the single primary control.
+2. **Claim the office** — name, placement role, and work email. The prototype visibly simulates work-domain verification: check domain → match campus office → secure campus graph. A guest does **not** get another university’s graph.
+3. **Welcome, then radar** — the welcome calibration shows mapped employers, available alumni, and warm roles; Free remains evidence exploration with 3 introductions/day, while Pro adds reviewed AI plans and batch outreach. Then employers appear as dots, with logos in the dock. A teal status dot means alumni are available.
+4. **Click a company** — campus-match evidence appears before available alumni by role, branch, class year, and city. **No legal names.** Live jobs sit alongside them.
+5. **Hello on Pulse** — Free starts 3 connections/day. Pro prepares a tailored draft for every available alumnus at the selected company, then sends only after one explicit review.
 6. **After they reply** — a second Pulse ask: HR intro / two profiles / placement pipeline.
 7. **Inbox** — threads stay unnamed. **Next day** (demo) lands replies.
 
-Four chips: *Company → Alumni seats → Pulse message*.
+Three chips: *Company → Alumni available → Pulse message*.
 
 ### Cold start vs this mock
 
@@ -49,7 +49,7 @@ For the **clickable demo**, the mock seeds a few people as already on Pulse at t
 | Desktop first | Click a radar/dock point, side inspector. Not hover. Not a mobile story-sheet (later). |
 | Two doors | TPO this mock. Alumni signup later. |
 | No top tabs | Do not bring back Work / Students / Market / File as chrome tabs. File is a **drawer** from the college chip after claim. |
-| Looks | **3 names/day, campus-wide**, not 3 contacts per company. Counts are always free. |
+| Outreach | Free: **3 connections/day, campus-wide**. Pro: reviewed bulk outreach to every selected alumnus available on Pulse. Public-profile counts are never treated as contactable people. |
 | Jobs | Live roles are unmetered **Open now**. Pulse market intelligence + college affinity — not a fake 3-JD tank. Internships are a last Internshala **snapshot** (feed dead since Jun 2025). |
 | Ask | After a name is open. Pulse delivers. Inbox for replies. |
 | 2027 vs 2026 | Brief 2027. 2026 is incomplete. |
@@ -69,6 +69,7 @@ python3 -m http.server 3020 --bind 127.0.0.1
 
 - Prototype (designs): http://127.0.0.1:3020/
 - Vanilla SPA: http://127.0.0.1:3020/app/
+- UI acceptance checks: http://127.0.0.1:3020/tests/prototype-ui.html
 
 **Reset demo** in the header clears `localStorage` and starts over.
 
@@ -81,7 +82,7 @@ After CSS/JS edits, bump the `?v=` query on the matching tag in `app/index.html`
 ## Repo layout
 
 ```
-index.html        Design-canvas prototype (current TPO designs). STORAGE = pulse-campus:dc:v1
+index.html        Design-canvas prototype (current TPO designs). STORAGE = pulse-campus:dc:v2
 support.js        Prototype runtime (generated). Do not hand-edit.
 app/index.html    Vanilla IIFE SPA (previous implementation)
 app/styles.css    Grok dark + teal
@@ -90,25 +91,33 @@ app/graph.js      buildEmployment, role books, COMPANY_DOMAINS, logoHTML / logoS
 app/logos/        local PNG marks (`{domain}.png`) — used by prototype and SPA
 app/app.js        IIFE SPA. STORAGE = pulse-campus:tpo:v8. LOOKS_MAX = 3
 prototype/HANDOFF.md   Notes from the design drop (momentum, tape, daily drop, inbox)
+tests/prototype-ui.html Browser acceptance checks for responsive layout, contrast, targets, motion, and inspector containment
+mood.md / voice.md / tokens.md   Prototype brand, copy, and design-system guidance
 .github/workflows/pages.yml   deploys root prototype + app/ to GitHub Pages
 ```
 
 ### Prototype extras (root `index.html`)
 
+- **Onboarding** — simulated work-email validation and a pre-radar welcome are transient UI state; saved v2 demo fixtures reopen at a stable surface, never half-way through a verification animation
 - **Momentum bar** — climbs on visit (+3), reveal (+10), ask (+14), reply (+20)
 - **Radar pings** — every ~5s, floating signal labels + sonar echo
+- **Company dock** — the twelve most actionable employers, ranked by fresh arrival, available alumni, hiring activity, and alumni count; every employer remains a radar dot and is available in a searchable, filtered `View all` directory
+- **Task mode** — opening an inspector keeps the radar sweep, selected-company lock, and live-jobs rail active while pausing only transient ping bursts
 - **Daily drop** — full-screen 3-look moment, overnight joins, fresh tape
-- **Market tape** — scrolling live roles; Pro-locked filters (My branches / Warm paths / Today)
+- **Market tape** — an in-flow rail below outreach progress with compact logo-led roles ordered newest-first, slow idle crawl, simulated live arrival that temporarily promotes its company in the dock, and Pro filters (My branches / Warm paths / Today)
+- **Pro action panel** — company and job evidence remain free; Pro turns the selected evidence into a coordinated review plan
+- **AI preparation** — simulated stages read evidence, draft distinct alumni introductions, add an exact-job batch opportunity brief, then expose selected/skipped review rows; this step never sends
+- **Signal acquisition** — inspectors and dialogs resolve through a one-shot 280ms radar lock/beam; reduced motion receives a restrained fade
 - **Campus report** — sector mix, cities, CTC bands, principal brief
 - **Inbox** — threads, timestamps, Send 2 profiles, Nudge
-- **Job cards** — Match my 2027, Copy brief
+- **Job evidence** — exact role and stream, then Connect 2027 batch evidence or Copy role brief
 - Japan-linked filter dropped in the prototype (data still in `data.js`)
 
 ### Data / graph
 
 - `data.js` — colleges (id, short, city, NIRF, alumni, departments, companies by type). NIT Trichy (`nitt`) has 27 employers.
 - `graph.js` — turns company counts × role book into people. Keys look like `Bosch|Quality Engineer|Rohit V.` or `Bosch|Quality Engineer|0` for synthesised rows. Logos: `app/logos/{domain}.png` copied from **Pulse** (`logoUrl` on `/api/companies`, CI3 + Pulse S3). Favicon then initials if missing.
-- Live jobs in `data.js` are illustrative of Pulse/market cuts, not a live API. College affinity = **counts**, not verified names.
+- Live jobs in `data.js` are illustrative of Pulse/market cuts, not a live API. The prototype simulates one incoming Bosch role; production will replace that timer with a real stream. College affinity = **counts**, not verified names.
 
 ### State (`app.js`)
 
@@ -124,9 +133,10 @@ prototype/HANDOFF.md   Notes from the design drop (momentum, tape, daily drop, i
 - Keep the TPO loop obvious. If a TPO cannot see **who** to ask and **what to click next**, the change failed.
 - Company card is not the job board. People on Pulse come first. Jobs are “Open now” under the person/company.
 - Do not reintroduce a jobs tank, hover popovers as the desktop path, or LinkedIn as the ask channel.
-- Do not auto-mail anyone.
+- Do not auto-mail anyone. Pro may prepare and select a batch, but the TPO must review and explicitly send it.
 - Prefer editing `app/app.js` + `app/styles.css` + `app/graph.js`. Cache-bust in `index.html`.
 - Verify in a browser (desktop 1440×900). Isolated profile / Reset demo so leftover `localStorage` does not mix sessions.
+- Also verify the 1366×768 short-laptop layout and run `tests/prototype-ui.html` before considering a UI pass complete.
 - Alumni door and mobile story-sheet are **later**, not this mock.
 
 ---

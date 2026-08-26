@@ -1,0 +1,1466 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse Campus UI acceptance tests</title>
+  <style>
+    body { margin: 0; padding: 20px; background: #111; color: #eee; font: 14px/1.5 ui-monospace, monospace; }
+    iframe { position: fixed; left: -2000px; top: 0; width: 1366px; height: 768px; border: 0; }
+    .pass { color: #62d6a7; }
+    .fail { color: #ff8585; }
+  </style>
+</head>
+<body>
+  <h1>Pulse Campus UI acceptance tests</h1>
+  <ol id="results"></ol>
+  <iframe id="prototype" title="Prototype under test"></iframe>
+  <script>
+    const STORAGE = "pulse-campus:dc:v2";
+    const frame = document.querySelector("#prototype");
+    const results = document.querySelector("#results");
+    const failures = [];
+    const windowErrors = [];
+
+    function captureWindowError(value) {
+      if (windowErrors.length < 100) windowErrors.push(String(value || "unknown window error"));
+    }
+
+    window.addEventListener("error", event => captureWindowError(event.error && event.error.stack || event.message));
+    window.addEventListener("unhandledrejection", event => captureWindowError(event.reason && event.reason.stack || event.reason));
+
+    async function waitFor(condition, description, timeoutMs = 8000) {
+      const started = Date.now();
+      while (Date.now() - started <= timeoutMs) {
+        const value = condition();
+        if (value) return value;
+        await new Promise(resolve => setTimeout(resolve, 25));
+      }
+      throw new Error(`Timed out waiting for ${description}`);
+    }
+
+    function report(name, passed, detail = "") {
+      const item = document.createElement("li");
+      item.className = passed ? "pass" : "fail";
+      item.textContent = `${passed ? "PASS" : "FAIL"} — ${name}${detail ? `: ${detail}` : ""}`;
+      results.append(item);
+      if (!passed) failures.push(name);
+    }
+
+    function rgb(value) {
+      const parts = value.match(/[\d.]+/g).slice(0, 3).map(Number);
+      return parts.map(channel => {
+        const normalized = channel / 255;
+        return normalized <= 0.03928
+          ? normalized / 12.92
+          : Math.pow((normalized + 0.055) / 1.055, 2.4);
+      });
+    }
+
+    function contrast(foreground, background) {
+      const luminance = value => {
+        const [r, g, b] = rgb(value);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    }
+
+    function hasReducedMotionRule(doc) {
+      const visit = rules => Array.from(rules || []).some(rule => {
+        if (rule.conditionText && rule.conditionText.includes("prefers-reduced-motion")) return true;
+        return rule.cssRules ? visit(rule.cssRules) : false;
+      });
+      return Array.from(doc.styleSheets).some(sheet => {
+        try { return visit(sheet.cssRules); } catch (_) { return false; }
+      });
+    }
+
+    function reducedMotionCss(doc) {
+      const chunks = [];
+      const visit = rules => Array.from(rules || []).forEach(rule => {
+        if (rule.conditionText && rule.conditionText.includes("prefers-reduced-motion")) chunks.push(rule.cssText);
+        if (rule.cssRules) visit(rule.cssRules);
+      });
+      Array.from(doc.styleSheets).forEach(sheet => {
+        try { visit(sheet.cssRules); } catch (_) {}
+      });
+      return chunks.join("\n");
+    }
+
+    function visibleInteractiveTargets(doc, selector) {
+      return Array.from(doc.querySelectorAll(selector)).filter(element => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0 && !element.closest("[aria-hidden='true']");
+      });
+    }
+
+    function targetGeometryDetail(elements) {
+      return elements
+        .filter(element => {
+          const rect = element.getBoundingClientRect();
+          return rect.width < 40 || rect.height < 40;
+        })
+        .slice(0, 8)
+        .map(element => {
+          const rect = element.getBoundingClientRect();
+          return `${element.tagName.toLowerCase()} ${element.textContent.trim().replace(/\s+/g, " ").slice(0, 24) || element.getAttribute("aria-label") || element.getAttribute("placeholder") || "control"} ${Math.round(rect.width)}×${Math.round(rect.height)}`;
+        })
+        .join(" | ");
+    }
+
+    function allTargetsAtLeast40(elements) {
+      return elements.length > 0 && elements.every(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.width >= 40 && rect.height >= 40;
+      });
+    }
+
+    async function load(state, name, readySelector, options = {}) {
+      frame.src = "about:blank";
+      await waitFor(() => frame.contentDocument && frame.contentDocument.URL === "about:blank", `${name} fixture isolation`);
+      localStorage.setItem(STORAGE, JSON.stringify(state));
+      frame.src = `../index.html?ui-test=${name}-${Date.now()}${options.reduceMotion ? "&ui-test-reduce-motion=1" : ""}`;
+      const readyElement = await waitFor(
+        () => {
+          const element = frame.contentDocument && frame.contentDocument.querySelector(readySelector);
+          if (!element) return false;
+          const rect = element.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0 ? element : false;
+        },
+        `${name} screen to render`
+      );
+      const fixtureWindow = frame.contentWindow;
+      fixtureWindow.addEventListener("error", event => captureWindowError(`${name}: ${event.error && event.error.stack || event.message}`));
+      fixtureWindow.addEventListener("unhandledrejection", event => captureWindowError(`${name}: ${event.reason && event.reason.stack || event.reason}`));
+      return frame.contentDocument;
+    }
+
+    async function run() {
+      const landing = await load(
+        { scene: "landing", collegeId: null, claimed: false },
+        "landing",
+        "input[placeholder*='NIT Trichy']"
+      );
+      const landingWindow = frame.contentWindow;
+      const input = landing.querySelector("input[placeholder*='NIT Trichy']");
+      const inputStyle = getComputedStyle(input);
+      const inputRect = input.getBoundingClientRect();
+      const inputContrast = contrast(inputStyle.borderTopColor, inputStyle.backgroundColor);
+
+      report("document has a descriptive product title", landing.title.startsWith("Pulse Campus"), landing.title || "empty title");
+      const landingPromise = landing.querySelector("[data-screen-label='Landing gate']");
+      const landingPromiseText = landingPromise ? landingPromise.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "landing states the evidence-to-action promise before campus search",
+        Boolean(
+          landingPromise &&
+          /Find the path from your campus to a company\./.test(landingPromiseText) &&
+          /See where alumni work/.test(landingPromiseText) &&
+          /understand why roles fit/.test(landingPromiseText) &&
+          /coordinate outreach/.test(landingPromiseText) &&
+          /Explore free · Pro coordinates action/.test(landingPromiseText)
+        ),
+        landingPromiseText || "landing promise missing"
+      );
+      report("landing action stays comfortably above the fold at 1366×768", inputRect.bottom <= landingWindow.innerHeight - 48, `input bottom ${Math.round(inputRect.bottom)}px`);
+      report("input boundary meets 3:1 component contrast", inputContrast >= 3, `${inputContrast.toFixed(2)}:1`);
+      report("current prototype defines reduced-motion behavior", hasReducedMotionRule(landing));
+
+      const landingTargets = visibleInteractiveTargets(landing, "[data-screen-label='Landing gate'] button, [data-screen-label='Landing gate'] input");
+      report("landing interactive controls provide at least 40×40px targets", allTargetsAtLeast40(landingTargets), targetGeometryDetail(landingTargets) || `${landingTargets.length} targets`);
+
+      const sourceText = await fetch(`../index.html?source-guard=${Date.now()}`).then(response => response.text());
+      const unsafeLocalClaim = /\bDelivered\b|Updates itself\s*[—-]\s*no Excel|Pulse is sending this|Pulse will carry this|2027 invites queued from the placement office|Pulse will remind them once|2 profiles queued|Pulse will carry them/i;
+      report(
+        "prototype source contains no Delivered, self-updating, or unsimulated local-operation claims",
+        !unsafeLocalClaim.test(sourceText),
+        (sourceText.match(unsafeLocalClaim) || ["source guard clear"])[0]
+      );
+      const evidenceDiff = await fetch(`../.superpowers/sdd/2026-08-26-end-to-end-evidence-flow/final-working-review.diff?evidence=${Date.now()}`).then(response => response.text());
+      report(
+        "the working-review evidence package includes campus-domain controller changes",
+        /diff --git a\/app\/data\.js b\/app\/data\.js/.test(evidenceDiff) && /emailDomain:\s*"vit\.ac\.in"/.test(evidenceDiff),
+        /diff --git a\/app\/data\.js b\/app\/data\.js/.test(evidenceDiff) ? "app/data.js diff present without VIT domain" : "app/data.js diff missing"
+      );
+
+      const campusEmailDomains = {
+        nitt: "nitt.edu",
+        vit: "vit.ac.in",
+        bits: "bits-pilani.ac.in",
+        nitk: "nitk.edu.in",
+        coep: "coeptech.ac.in",
+        dtu: "dtu.ac.in",
+        pesu: "pes.edu",
+        rvce: "rvce.edu.in",
+        psg: "psgtech.edu",
+        srm: "srmist.edu.in",
+        amrita: "amrita.edu",
+        manipal: "manipal.edu",
+        jadavpur: "jadavpuruniversity.in",
+        anna: "annauniv.edu"
+      };
+      const dataCampuses = Array.from(landing.defaultView.PULSE_CAMPUS.colleges || []);
+      report(
+        "every campus declares one canonical work-email domain",
+        dataCampuses.length === Object.keys(campusEmailDomains).length && dataCampuses.every(campus => campus.emailDomain === campusEmailDomains[campus.id]),
+        dataCampuses.map(campus => `${campus.id}:${campus.emailDomain || "missing"}`).join(", ")
+      );
+
+      const vitLanding = await load(
+        { scene: "landing", collegeId: null, claimed: false },
+        "vit-email-domain",
+        "input[placeholder*='NIT Trichy']",
+        { reduceMotion: true }
+      );
+      const vitSearch = vitLanding.querySelector("input[placeholder*='NIT Trichy']");
+      vitSearch.value = "VIT Vellore";
+      vitSearch.dispatchEvent(new Event("input", { bubbles: true }));
+      const vitChoice = await waitFor(
+        () => Array.from(vitLanding.querySelectorAll("button")).find(button => button.textContent.includes("VIT Vellore")),
+        "VIT Vellore campus choice"
+      );
+      vitChoice.click();
+      const vitClaim = await waitFor(() => vitLanding.querySelector("[data-flow-stage='claim']"), "VIT claim form");
+      const vitName = vitClaim.querySelector("input[type='text']");
+      const vitRole = vitClaim.querySelector("[data-flow-role]");
+      const vitEmail = vitClaim.querySelector("input[type='email']");
+      vitName.value = "VIT Domain Test";
+      vitName.dispatchEvent(new Event("input", { bubbles: true }));
+      vitRole.value = "Placement Head";
+      vitRole.dispatchEvent(new Event("input", { bubbles: true }));
+      vitEmail.value = "wrong@example.com";
+      vitEmail.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 40));
+      Array.from(vitLanding.querySelector("[data-flow-stage='claim']").querySelectorAll("button")).find(button => button.textContent.includes("Verify work email")).click();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const invalidVitEmail = vitLanding.querySelector("[data-flow-stage='claim'] input[type='email']");
+      const invalidVitAlert = vitLanding.querySelector("[data-flow-stage='claim'] [role='alert']");
+      report(
+        "invalid campus email explains the canonical domain and keeps the entered value",
+        Boolean(invalidVitEmail && invalidVitEmail.value === "wrong@example.com" && invalidVitAlert && invalidVitAlert.textContent.includes("vit.ac.in")),
+        invalidVitAlert ? `${invalidVitEmail.value} · ${invalidVitAlert.textContent.trim()}` : "invalid-domain feedback missing"
+      );
+      const visibleVitPlaceholder = invalidVitEmail ? invalidVitEmail.getAttribute("placeholder") : "";
+      invalidVitEmail.value = visibleVitPlaceholder;
+      invalidVitEmail.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 40));
+      Array.from(vitLanding.querySelector("[data-flow-stage='claim']").querySelectorAll("button")).find(button => button.textContent.includes("Verify work email")).click();
+      const vitValidation = await waitFor(() => vitLanding.querySelector("[data-flow-stage='validating']"), "VIT placeholder email validation", 700).catch(() => null);
+      report(
+        "the visible canonical campus-email placeholder submits successfully",
+        Boolean(visibleVitPlaceholder === "tpo@vit.ac.in" && vitValidation),
+        `${visibleVitPlaceholder || "placeholder missing"} · ${vitValidation ? "validating" : "rejected"}`
+      );
+
+      const malformedVit = await load(
+        {
+          scene: "campus",
+          collegeId: "vit",
+          claimed: false,
+          claimStep: "form",
+          profile: { name: "Malformed Domain Test", email: "x@@vit.ac.in", role: "Placement Head" }
+        },
+        "malformed-vit-email",
+        "[data-flow-stage='claim']",
+        { reduceMotion: true }
+      );
+      const malformedSubmit = Array.from(malformedVit.querySelectorAll("[data-flow-stage='claim'] button")).find(button => button.textContent.includes("Verify work email"));
+      if (malformedSubmit) malformedSubmit.click();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const malformedClaim = malformedVit.querySelector("[data-flow-stage='claim']");
+      const malformedInput = malformedClaim && malformedClaim.querySelector("input[type='email']");
+      const malformedAlert = malformedClaim && malformedClaim.querySelector("[role='alert']");
+      report(
+        "campus validation rejects malformed addresses that merely end in the canonical domain",
+        Boolean(malformedInput && malformedInput.value === "x@@vit.ac.in" && malformedAlert && /vit\.ac\.in/.test(malformedAlert.textContent)),
+        malformedClaim ? `${malformedInput ? malformedInput.value : "input missing"} · ${malformedAlert ? malformedAlert.textContent.trim() : "alert missing"}` : "malformed email was accepted"
+      );
+
+      const onboardingLanding = await load(
+        { scene: "landing", collegeId: null, claimed: false },
+        "onboarding-landing",
+        "input[placeholder*='NIT Trichy']"
+      );
+      const onboardingSearch = onboardingLanding.querySelector("input[placeholder*='NIT Trichy']");
+      onboardingSearch.value = "NIT Trichy";
+      onboardingSearch.dispatchEvent(new Event("input", { bubbles: true }));
+      const nittChoice = await waitFor(
+        () => Array.from(onboardingLanding.querySelectorAll("button")).find(button => button.textContent.includes("NIT Trichy")),
+        "NIT Trichy campus choice"
+      );
+      nittChoice.click();
+      const claimForm = await waitFor(
+        () => onboardingLanding.querySelector("[data-flow-stage='claim']"),
+        "claim form after campus selection",
+        1500
+      ).catch(() => null);
+      const claimRole = claimForm && claimForm.querySelector("[data-flow-role]");
+      const claimEmail = claimForm && claimForm.querySelector("input[type='email']");
+      report(
+        "campus selection opens a claim form with placement role and work email",
+        Boolean(claimForm && claimRole && claimEmail && /simulates work-domain verification/i.test(claimForm.textContent)),
+        claimForm ? claimForm.textContent.replace(/\s+/g, " ").trim() : "claim form missing"
+      );
+
+      if (claimForm && claimRole && claimEmail) {
+        const name = claimForm.querySelector("input[type='text']");
+        name.value = "UI Test";
+        name.dispatchEvent(new Event("input", { bubbles: true }));
+        await new Promise(resolve => setTimeout(resolve, 40));
+        const email = onboardingLanding.querySelector("[data-flow-stage='claim'] input[type='email']");
+        email.value = "test@nitt.edu";
+        email.dispatchEvent(new Event("input", { bubbles: true }));
+        await new Promise(resolve => setTimeout(resolve, 40));
+        Array.from(onboardingLanding.querySelector("[data-flow-stage='claim']").querySelectorAll("button")).find(button => button.textContent.includes("Verify work email")).click();
+      }
+      const persistedOnboarding = JSON.parse(localStorage.getItem(STORAGE) || "{}");
+      report(
+        "transient onboarding fields are omitted from persisted v2 state",
+        !["onboardingStage", "validationStep", "claimError"].some(key => Object.prototype.hasOwnProperty.call(persistedOnboarding, key)),
+        Object.keys(persistedOnboarding).filter(key => ["onboardingStage", "validationStep", "claimError"].includes(key)).join(", ") || "none"
+      );
+      const validationPanel = await waitFor(
+        () => onboardingLanding.querySelector("[data-flow-stage='validating']"),
+        "simulated work-email validation",
+        2500
+      ).catch(() => null);
+      const validationText = validationPanel ? validationPanel.textContent.replace(/\s+/g, " ") : "";
+      report(
+        "simulated work-email validation shows every office verification step",
+        Boolean(validationPanel && validationPanel.querySelector("[data-validation-step='2']") && /Check work domain/.test(validationText) && /Match campus office/.test(validationText) && /Secure campus graph/.test(validationText) && /simulated/i.test(validationText)),
+        validationText || "validation panel missing"
+      );
+      const firstValidationStep = validationPanel && validationPanel.querySelector("[data-validation-step='1']");
+      const firstStepStartsChecking = firstValidationStep && /checking/i.test(firstValidationStep.textContent);
+      const secondValidationStep = await waitFor(
+        () => {
+          const step = onboardingLanding.querySelector("[data-validation-step='2']");
+          return step && /checking/i.test(step.textContent) ? step : false;
+        },
+        "second validation step to begin",
+        1000
+      ).catch(() => null);
+      report(
+        "normal-motion validation progresses one visible check at a time",
+        Boolean(firstStepStartsChecking && secondValidationStep),
+        `${firstStepStartsChecking ? "step 1 checking" : "step 1 did not begin checking"}; ${secondValidationStep ? "step 2 checking" : "step 2 never checked"}`
+      );
+
+      const welcomePanel = await waitFor(
+        () => onboardingLanding.querySelector("[data-flow-welcome]"),
+        "welcome calibration panel",
+        3000
+      ).catch(() => null);
+      const welcomeText = welcomePanel ? welcomePanel.textContent.replace(/\s+/g, " ") : "";
+      report(
+        "welcome calibrates Free exploration and Pro reviewed action before radar entry",
+        Boolean(welcomePanel && /Free: explore all evidence \+ 3 introductions\/day/.test(welcomeText) && /Pro: AI plans and reviewed batch outreach/.test(welcomeText) && /Enter campus radar/.test(welcomeText) && /employers mapped/.test(welcomeText) && /alumni available on Pulse/.test(welcomeText) && /warm live roles/.test(welcomeText)),
+        welcomeText || "welcome panel missing"
+      );
+      const enterRadar = welcomePanel && Array.from(welcomePanel.querySelectorAll("button")).find(button => button.textContent.includes("Enter campus radar"));
+      if (enterRadar) enterRadar.click();
+      const enteredRadar = await waitFor(
+        () => onboardingLanding.querySelector("[data-flow-welcome]") ? false : onboardingLanding.querySelector("[data-screen-label='Market tape']"),
+        "campus radar after welcome",
+        1500
+      ).catch(() => null);
+      report("welcome enters the claimed campus radar", Boolean(enteredRadar), enteredRadar ? "radar visible" : "radar not entered");
+
+      const reducedLanding = await load(
+        { scene: "landing", collegeId: null, claimed: false },
+        "onboarding-reduced-motion",
+        "input[placeholder*='NIT Trichy']",
+        { reduceMotion: true }
+      );
+      const reducedSearch = reducedLanding.querySelector("input[placeholder*='NIT Trichy']");
+      reducedSearch.value = "NIT Trichy";
+      reducedSearch.dispatchEvent(new Event("input", { bubbles: true }));
+      const reducedChoice = await waitFor(
+        () => Array.from(reducedLanding.querySelectorAll("button")).find(button => button.textContent.includes("NIT Trichy")),
+        "reduced-motion NIT Trichy choice"
+      );
+      reducedChoice.click();
+      const reducedClaim = await waitFor(() => reducedLanding.querySelector("[data-flow-stage='claim']"), "reduced-motion claim form");
+      const reducedName = reducedClaim.querySelector("input[type='text']");
+      reducedName.value = "Reduced Motion Test";
+      reducedName.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const reducedEmail = reducedLanding.querySelector("[data-flow-stage='claim'] input[type='email']");
+      reducedEmail.value = "reduced@nitt.edu";
+      reducedEmail.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 40));
+      Array.from(reducedLanding.querySelector("[data-flow-stage='claim']").querySelectorAll("button")).find(button => button.textContent.includes("Verify work email")).click();
+      const reducedValidation = await waitFor(
+        () => reducedLanding.querySelector("[data-flow-stage='validating']"),
+        "completed reduced-motion validation",
+        500
+      ).catch(() => null);
+      await new Promise(resolve => setTimeout(resolve, 180));
+      const reducedRows = reducedValidation ? Array.from(reducedValidation.querySelectorAll("[data-validation-step]")) : [];
+      const reducedWelcomeVisible = Boolean(reducedLanding.querySelector("[data-flow-welcome]"));
+      report(
+        "reduced motion visibly completes validation before welcome",
+        reducedRows.length === 3 && reducedRows.every(row => /verified/i.test(row.textContent)) && !reducedWelcomeVisible,
+        reducedValidation ? `${reducedRows.filter(row => /verified/i.test(row.textContent)).length}/3 verified; welcome ${reducedWelcomeVisible ? "visible" : "deferred"}` : "validation panel missing"
+      );
+
+      const campus = await load({
+        scene: "campus",
+        collegeId: "nitt",
+        claimed: true,
+        profile: { name: "UI Test", email: "test@nitt.edu", role: "Placement Head" },
+        looks: 3,
+        inspectCompany: null,
+        inspectName: null,
+        onPulse: [],
+        pings: [
+          { label: "Newest campus signal", time: "day 1", id: 2 },
+          { label: "Earlier campus signal", time: "day 1", id: 1 }
+        ],
+        view: "radar"
+      }, "campus", "button[aria-label^='Software Engineer at Infosys']");
+
+      const rootStyle = getComputedStyle(campus.documentElement);
+      const progress = campus.querySelector("[data-progress-bar]");
+      const progressStyle = progress ? getComputedStyle(progress) : null;
+      const journeyStep = campus.querySelector(".journey-step");
+      const journeyStyle = journeyStep ? getComputedStyle(journeyStep) : null;
+      const tapeTrack = campus.querySelector(".market-tape-track");
+      const tapeViewport = tapeTrack ? tapeTrack.parentElement : null;
+      const tapeTrackStyle = tapeTrack ? getComputedStyle(tapeTrack) : null;
+      const tapeViewportStyle = tapeViewport ? getComputedStyle(tapeViewport) : null;
+      const pulseButton = Array.from(campus.querySelectorAll("button")).find(button => button.textContent.includes("Pulse") && button.textContent.includes("3"));
+      const pulseButtonStyle = pulseButton ? getComputedStyle(pulseButton) : null;
+      const feedItems = Array.from(campus.querySelectorAll("[data-ping-feed-item]"));
+      const dockButtons = Array.from(campus.querySelectorAll(".dock-button"));
+      const radarCompanies = Array.from(campus.querySelectorAll(".radar-target"));
+      const companyCountLine = campus.querySelector("[data-company-count]");
+      const dockMarks = Array.from(campus.querySelectorAll(".dock-company-logo"));
+      const headerAndMarketTargets = visibleInteractiveTargets(campus, ".app-header button, .app-header summary, .market-tape button, .company-dock button, [data-company-directory-trigger]");
+
+      report("motion uses shared strong easing tokens", rootStyle.getPropertyValue("--ease-out").includes("0.23") && rootStyle.getPropertyValue("--ease-in-out").includes("0.77"));
+      report("header, filters, tape, and company-dock controls provide at least 40×40px targets", allTargetsAtLeast40(headerAndMarketTargets), targetGeometryDetail(headerAndMarketTargets) || `${headerAndMarketTargets.length} targets`);
+      report("outreach progress animates on the compositor", progressStyle && progressStyle.transitionProperty.includes("transform") && !progressStyle.transitionProperty.includes("width"), progressStyle ? progressStyle.transitionProperty : "progress bar missing");
+      report("journey state changes use restrained color transitions", journeyStyle && journeyStyle.transitionProperty.includes("color") && parseFloat(journeyStyle.transitionDuration) <= 0.16, journeyStyle ? `${journeyStyle.transitionProperty} ${journeyStyle.transitionDuration}` : "journey step missing");
+      report("the detailed company dock is capped at twelve choices", dockButtons.length === 12, `${dockButtons.length} detailed companies`);
+      report("the radar still represents every campus employer", radarCompanies.length === 27, `${radarCompanies.length} employer signals`);
+      report("the dock summary states the visible and full employer counts", companyCountLine && /Showing 12 of 27 employers/.test(companyCountLine.textContent), companyCountLine ? companyCountLine.textContent.trim() : "summary missing");
+      report("dock company marks stay compact", dockMarks.length === 12 && dockMarks.every(mark => mark.getBoundingClientRect().width <= 30 && mark.getBoundingClientRect().height <= 30), `${dockMarks.length} marks`);
+      const dockLogoImages = dockMarks.map(mark => mark.querySelector("img[data-logo]")).filter(Boolean);
+      const neutralDockEdges = new Set(dockMarks.map(mark => getComputedStyle(mark).boxShadow));
+      const availabilityDots = Array.from(campus.querySelectorAll("[data-alumni-available]"));
+      report("loaded company logos fully cover the colored fallback", dockLogoImages.length === dockMarks.length && dockLogoImages.every(image => {
+        const imageRect = image.getBoundingClientRect();
+        const markRect = image.parentElement.getBoundingClientRect();
+        return Math.abs(imageRect.width - markRect.width) <= 1 && Math.abs(imageRect.height - markRect.height) <= 1;
+      }), `${dockLogoImages.length}/${dockMarks.length} full-tile logos`);
+      report("ordinary company logos use one quiet neutral edge", neutralDockEdges.size === 1 && !Array.from(neutralDockEdges)[0].includes("8, 164, 184"), Array.from(neutralDockEdges).join(", "));
+      report("alumni availability uses a discrete status dot", availabilityDots.length > 0 && availabilityDots.every(dot => dot.getAttribute("aria-hidden") === "true" && getComputedStyle(dot).backgroundColor === "rgb(58, 214, 201)"), `${availabilityDots.length} availability dots`);
+      report("the journey names the alumni state in user language", Array.from(campus.querySelectorAll(".journey-step")).some(step => step.textContent.includes("Alumni available")));
+      const dockRows = dockButtons.reduce((rows, button) => {
+        const top = Math.round(button.getBoundingClientRect().top);
+        rows[top] = (rows[top] || 0) + 1;
+        return rows;
+      }, {});
+      report("the company dock holds a stable two-by-six rhythm", Object.values(dockRows).length === 2 && Object.values(dockRows).every(count => count === 6), Object.values(dockRows).join(" + "));
+      report("market jobs crawl slowly at a constant idle speed", tapeTrackStyle && tapeTrackStyle.animationName === "tape" && tapeTrackStyle.animationTimingFunction === "linear" && parseFloat(tapeTrackStyle.animationDuration) >= 60, tapeTrackStyle ? `${tapeTrackStyle.animationName} ${tapeTrackStyle.animationDuration} ${tapeTrackStyle.animationTimingFunction}` : "market rail missing");
+      report("market rail remains manually scrollable", tapeViewportStyle && ["auto", "scroll"].includes(tapeViewportStyle.overflowX), tapeViewportStyle ? `overflow ${tapeViewportStyle.overflowX}` : "market rail missing");
+      const marketRail = campus.querySelector("[data-screen-label='Market tape']");
+      const progressRect = progress ? progress.getBoundingClientRect() : null;
+      const marketRailRect = marketRail ? marketRail.getBoundingClientRect() : null;
+      report("live jobs sit directly after outreach progress in the primary flow", progress && marketRail && Boolean(progress.compareDocumentPosition(marketRail) & Node.DOCUMENT_POSITION_FOLLOWING) && getComputedStyle(marketRail).position !== "fixed" && marketRailRect.top >= progressRect.bottom && marketRailRect.top < frame.contentWindow.innerHeight, marketRailRect ? `rail top ${Math.round(marketRailRect.top)}px, position ${getComputedStyle(marketRail).position}` : "market rail missing");
+
+      const firstTapeButton = tapeTrack && tapeTrack.querySelector("button:not([tabindex='-1'])");
+      if (firstTapeButton) firstTapeButton.focus();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      report("market crawl pauses while a job receives keyboard focus", tapeTrack && getComputedStyle(tapeTrack).animationPlayState === "paused", tapeTrack ? getComputedStyle(tapeTrack).animationPlayState : "market rail missing");
+      if (firstTapeButton) firstTapeButton.blur();
+
+      if (tapeViewport) tapeViewport.scrollLeft = 120;
+      report("market rail accepts direct horizontal scrolling", tapeViewport && tapeViewport.scrollLeft > 0, tapeViewport ? `scrollLeft ${tapeViewport.scrollLeft}` : "market rail missing");
+      const tapeMask = tapeViewportStyle && (tapeViewportStyle.maskImage || tapeViewportStyle.webkitMaskImage);
+      report("market rail hints at more jobs with a right-edge fade", tapeMask && tapeMask !== "none", tapeMask || "no edge fade");
+      const duplicateTapeButtons = tapeTrack ? Array.from(tapeTrack.querySelectorAll("button[aria-hidden='true'][tabindex='-1']")) : [];
+      report("seamless duplicate jobs stay out of keyboard and screen-reader navigation", duplicateTapeButtons.length > 0 && duplicateTapeButtons.every(button => getComputedStyle(button).pointerEvents === "none"), `${duplicateTapeButtons.length} inert duplicates`);
+      const originalTapeButtons = tapeTrack ? Array.from(tapeTrack.querySelectorAll("button:not([tabindex='-1'])")) : [];
+      report("every market role has a recognisable company logo with text fallback", originalTapeButtons.length > 0 && originalTapeButtons.every(button => button.querySelector("img[data-logo]") && button.textContent.trim().length > 0), `${originalTapeButtons.filter(button => button.querySelector("img[data-logo]")).length}/${originalTapeButtons.length} logo-led roles`);
+
+      await new Promise(resolve => setTimeout(resolve, 2100));
+      const liveFeedStatus = campus.querySelector("[data-live-feed-status]");
+      const arrivedJob = campus.querySelector(".market-tape-track button.market-job-new:not([tabindex='-1'])");
+      const currentFirstJob = campus.querySelector(".market-tape-track button:not([tabindex='-1'])");
+      const arrivedJobStyle = arrivedJob ? getComputedStyle(arrivedJob) : null;
+      const promotedCompany = campus.querySelector(".dock-button.dock-company-new");
+      const compactMarketLogos = Array.from(campus.querySelectorAll(".market-job-logo"));
+      const compactMarketRail = campus.querySelector("[data-screen-label='Market tape']");
+      report("market strip announces a simulated live arrival", liveFeedStatus && /live|new/i.test(liveFeedStatus.textContent), liveFeedStatus ? liveFeedStatus.textContent.trim() : "live status missing");
+      report("newest role arrives at the leading edge with a Now timestamp", arrivedJob && currentFirstJob === arrivedJob && arrivedJob.textContent.includes("Now"), arrivedJob ? arrivedJob.textContent.replace(/\s+/g, " ").trim() : "new role missing");
+      report("a new role receives one restrained compositor entrance", arrivedJobStyle && arrivedJobStyle.animationName.includes("jobarrival") && parseFloat(arrivedJobStyle.animationDuration) >= 0.2 && parseFloat(arrivedJobStyle.animationDuration) <= 0.3, arrivedJobStyle ? `${arrivedJobStyle.animationName} ${arrivedJobStyle.animationDuration}` : "new role missing");
+      report("a live job temporarily promotes its company in the detailed dock", promotedCompany && promotedCompany.textContent.includes("Bosch") && promotedCompany.textContent.includes("New"), promotedCompany ? promotedCompany.textContent.replace(/\s+/g, " ").trim() : "promoted company missing");
+      report("market logos use the compact eighteen-pixel treatment", compactMarketLogos.length > 0 && compactMarketLogos.every(logo => logo.getBoundingClientRect().width <= 18 && logo.getBoundingClientRect().height <= 18), `${compactMarketLogos.length} logos`);
+      report("the market rail stays within a compact forty-eight pixels", compactMarketRail && compactMarketRail.getBoundingClientRect().height <= 48, compactMarketRail ? `${Math.round(compactMarketRail.getBoundingClientRect().height)}px` : "market rail missing");
+      report("primary pressables provide transform feedback", pulseButtonStyle && pulseButtonStyle.transitionProperty.includes("transform") && parseFloat(pulseButtonStyle.transitionDuration) > 0, pulseButtonStyle ? `${pulseButtonStyle.transitionProperty} ${pulseButtonStyle.transitionDuration}` : "Pulse button missing");
+      report("only the newest ping feed item receives entrance motion", feedItems.length === 2 && feedItems.filter(item => getComputedStyle(item).animationName !== "none").length === 1, `${feedItems.length} feed items, ${feedItems.filter(item => getComputedStyle(item).animationName !== "none").length} animated`);
+
+      const demoTools = campus.querySelector("[data-demo-tools]");
+      demoTools.open = true;
+      const demoMenu = campus.querySelector(".demo-tools-menu");
+      const demoMenuStyle = demoMenu ? getComputedStyle(demoMenu) : null;
+      const menuOrigin = demoMenuStyle ? demoMenuStyle.transformOrigin.split(" ").map(parseFloat) : [];
+      report("demo popover is origin-aware and transition-driven", demoMenuStyle && demoMenuStyle.transitionProperty.includes("opacity") && demoMenuStyle.transitionProperty.includes("transform") && menuOrigin[0] >= demoMenu.getBoundingClientRect().width * 0.75 && menuOrigin[1] <= 2, demoMenuStyle ? `${demoMenuStyle.transitionProperty}, origin ${demoMenuStyle.transformOrigin}` : "demo menu missing");
+      demoTools.open = false;
+
+      const activePulseButton = Array.from(campus.querySelectorAll("button")).find(button => button.textContent.includes("Pulse") && button.textContent.includes("3"));
+      activePulseButton.click();
+      const toast = await waitFor(() => campus.querySelector("[role='status'][aria-live='polite']"), "animated status toast");
+      const toastStyle = getComputedStyle(toast);
+      const toastRect = toast.getBoundingClientRect();
+      const visibleTapeRect = campus.querySelector("[data-screen-label='Market tape']").getBoundingClientRect();
+      report("toast uses interruptible transform and opacity transitions", toastStyle.transitionProperty.includes("opacity") && toastStyle.transitionProperty.includes("transform") && parseFloat(toastStyle.transitionDuration) <= 0.2, `${toastStyle.transitionProperty} ${toastStyle.transitionDuration}`);
+      report("toast remains clear of the live-jobs rail", toastRect.bottom <= visibleTapeRect.top - 8 || toastRect.top >= visibleTapeRect.bottom + 8, `toast ${Math.round(toastRect.top)}–${Math.round(toastRect.bottom)}px, rail ${Math.round(visibleTapeRect.top)}–${Math.round(visibleTapeRect.bottom)}px`);
+
+      const motionCss = reducedMotionCss(campus);
+      report("reduced motion covers every new motion surface", ["daily-drop-item", "ping-feed-new", "demo-tools-menu", "toast", "progress-fill", "market-tape-track", "market-job-new", "dock-company-new", "signal-acquiring", "delivery-beam"].every(selector => motionCss.includes(selector)));
+      report("reduced motion disables active press scaling", /button[^{}]*:active[^{]*\{[^}]*transform:\s*none/i.test(motionCss), "reduced-motion active transform override");
+
+      const freeReportToggle = Array.from(campus.querySelectorAll("button")).find(button => button.textContent.trim() === "Report");
+      if (freeReportToggle) freeReportToggle.click();
+      const freeReport = await waitFor(() => campus.querySelector("[data-screen-label='Campus report']"), "Free campus report").catch(() => null);
+      const freeCtc = freeReport && freeReport.querySelector("[data-report-ctc]");
+      const freeMovement = freeReport && freeReport.querySelector("[data-report-weekly]");
+      const freeReportText = freeReport ? freeReport.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "Free campus report keeps CTC evidence visible without an upgrade gate",
+        Boolean(freeCtc && freeCtc.querySelectorAll("[data-ctc-band]").length > 0 && /LPA/.test(freeCtc.textContent) && !/Unlock CTC|filter:\s*blur/i.test(freeCtc.innerHTML)),
+        freeReportText || "Free CTC evidence missing"
+      );
+      report(
+        "Free campus report keeps weekly movement evidence visible without an upgrade gate",
+        Boolean(freeMovement && freeMovement.querySelectorAll("[data-weekly-movement]").length > 0 && /\+\d+/.test(freeMovement.textContent) && !/Unlock weekly|filter:\s*blur/i.test(freeMovement.innerHTML)),
+        freeReportText || "Free movement evidence missing"
+      );
+      report(
+        "static report and principal brief use illustrative public-profile or demo provenance",
+        Boolean(
+          freeReport &&
+          /illustrative|public-profile|seeded demo/i.test(freeReportText) &&
+          !/Updates itself|are already on Pulse|have started a profile|\bDelivered\b/i.test(freeReportText)
+        ),
+        freeReportText || "report provenance missing"
+      );
+      const radarToggle = Array.from(campus.querySelectorAll("button")).find(button => button.textContent.trim() === "Radar");
+      if (radarToggle) radarToggle.click();
+      await waitFor(() => campus.querySelector("[data-screen-label='Market tape']"), "radar after Free report");
+
+      const directoryTrigger = campus.querySelector("[data-company-directory-trigger]");
+      report("the dock offers access to every employer", Boolean(directoryTrigger) && /View all 27/.test(directoryTrigger.textContent), directoryTrigger ? directoryTrigger.textContent.trim() : "View all missing");
+      if (directoryTrigger) {
+        directoryTrigger.focus();
+        directoryTrigger.click();
+        let directory = await waitFor(() => campus.querySelector("[data-company-directory]"), "company directory");
+        await new Promise(resolve => setTimeout(resolve, 40));
+        report("focus enters an opened modal dialog", directory.contains(campus.activeElement), campus.activeElement ? campus.activeElement.outerHTML.slice(0, 120) : "no active element");
+        const backgroundReportControl = Array.from(campus.querySelectorAll(".app-header button")).find(button => /Report|Radar/.test(button.textContent));
+        if (backgroundReportControl) backgroundReportControl.focus();
+        await new Promise(resolve => setTimeout(resolve, 40));
+        report("modal focus containment prevents background navigation from stealing focus", directory.contains(campus.activeElement), campus.activeElement ? campus.activeElement.textContent.trim() : "no active element");
+        campus.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        await new Promise(resolve => setTimeout(resolve, 40));
+        report("Escape closes the modal and restores its origin control", !campus.querySelector("[data-company-directory]") && campus.activeElement === directoryTrigger, campus.activeElement ? campus.activeElement.textContent.trim() : "focus not restored");
+        directoryTrigger.click();
+        directory = await waitFor(() => campus.querySelector("[data-company-directory]"), "reopened company directory");
+        const directoryFilters = Array.from(directory.querySelectorAll("[data-company-filter]"));
+        report("View all opens as an accessible radar-acquisition dialog", directory.getAttribute("role") === "dialog" && directory.getAttribute("aria-modal") === "true" && directory.classList.contains("signal-acquiring"));
+        const directoryTargets = visibleInteractiveTargets(campus, "[data-company-directory] button, [data-company-directory] input");
+        report("dialog filters and actions provide at least 40×40px targets", allTargetsAtLeast40(directoryTargets), targetGeometryDetail(directoryTargets) || `${directoryTargets.length} targets`);
+        report("the directory exposes hiring, alumni, and all-company filters", ["Hiring now", "Alumni available", "All companies"].every(label => directoryFilters.some(button => button.textContent.includes(label))), directoryFilters.map(button => button.textContent.trim()).join(", "));
+        const directoryCopy = directory.innerText.replace(/\s+/g, " ");
+        report("company availability uses singular and plural alumni language", directoryCopy.includes("1 alumnus available") && directoryCopy.includes("2 alumni available") && !/\b\d+\s+(?:Pulse\s+)?seats?\b/i.test(directoryCopy), directoryCopy);
+        const companySearch = directory.querySelector("input[placeholder='Search employers']");
+        companySearch.value = "Thermax";
+        companySearch.dispatchEvent(new Event("input", { bubbles: true }));
+        const directoryResults = await waitFor(() => {
+          const rows = Array.from(campus.querySelectorAll("[data-company-directory-result]"));
+          return rows.length === 1 && rows[0].textContent.includes("Thermax") ? rows : false;
+        }, "filtered Thermax company result");
+        report("directory search narrows the full employer network", directoryResults.length === 1 && directoryResults[0].textContent.includes("Thermax"));
+        directoryResults[0].click();
+        await waitFor(() => Array.from(campus.querySelectorAll("h2")).some(heading => heading.textContent.trim() === "Thermax"), "Thermax inspector handoff");
+        report("a directory result opens the existing company inspector", !campus.querySelector("[data-company-directory]") && Boolean(campus.querySelector("[data-screen-label='Inspector']")));
+        const directoryInspectorClose = campus.querySelector("[data-screen-label='Inspector'] button[aria-label='Close']");
+        if (directoryInspectorClose) directoryInspectorClose.click();
+      }
+
+      const lockedProEntry = Array.from(campus.querySelectorAll("[data-screen-label='Market tape'] button")).find(button => button.textContent.includes("My branches") && button.textContent.includes("PRO"));
+      if (lockedProEntry) lockedProEntry.click();
+      const lockedProShell = await waitFor(() => campus.querySelector("[role='dialog']"), "locked Pro preview");
+      const lockedProDialog = campus.querySelector("[data-pro-dialog]");
+      const lockedProText = lockedProDialog ? lockedProDialog.innerText.replace(/\s+/g, " ").trim() : "";
+      report("locked Pro opens a campus-specific outcome panel", Boolean(lockedProDialog));
+      report("locked Pro quantifies this campus's job and alumni opportunity", /21 warm openings/.test(lockedProText) && /9 contactable alumni/.test(lockedProText) && /6 companies/.test(lockedProText), lockedProText || "campus outcomes missing");
+      report("Pro explains the reviewed workflow before asking for an upgrade", /Choose company/.test(lockedProText) && /AI prepares/.test(lockedProText) && /Review and send/.test(lockedProText), lockedProText || "workflow missing");
+      report(
+        "locked Pro keeps explored evidence free and names coordinated action",
+        Boolean(/^pulse pro/i.test(lockedProText) && /Everything you explored stays free\./.test(lockedProText) && /Explore is free\. Pro turns evidence into coordinated action\./.test(lockedProText) && /9 alumni introductions prepared/.test(lockedProText) && /one reviewed send/.test(lockedProText)),
+        lockedProText || "Pro boundary missing"
+      );
+      const lockedProClose = campus.querySelector("button[aria-label='Close Pro']") || Array.from(lockedProShell.querySelectorAll("button")).find(button => button.textContent.includes("Not now"));
+      if (lockedProClose) lockedProClose.click();
+
+      const dataAnalystRow = Array.from(campus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Infosys/.test(button.textContent) && /Data Analyst/.test(button.textContent));
+      if (dataAnalystRow) dataAnalystRow.click();
+      const jobDetail = await waitFor(() => campus.querySelector("[data-job-detail]"), "Infosys Data Analyst evidence").catch(() => null);
+      const jobEvidence = jobDetail && jobDetail.querySelector("[data-job-evidence]");
+      const jobSkillTree = jobDetail && jobDetail.querySelector("[data-skill-tree]");
+      const jobDetailText = jobDetail ? jobDetail.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "Infosys Data Analyst opens its exact IT evidence without an empty general filter",
+        Boolean(jobDetail && jobDetail.getAttribute("data-job-id") === "j18" && jobDetail.getAttribute("data-job-stream") === "it" && /Data Analyst at Infosys/.test(jobDetailText) && jobEvidence && jobSkillTree),
+        jobDetailText || "job evidence missing"
+      );
+      const studentActions = jobDetail ? Array.from(jobDetail.querySelectorAll("button")) : [];
+      const primaryStudentAction = jobDetail && jobDetail.querySelector("[data-job-primary-action]");
+      report(
+        "exact role evidence starts with Connect 2027 batch evidence and never offers recommendation controls",
+        Boolean(primaryStudentAction && primaryStudentAction.textContent.trim() === "Connect 2027 batch evidence" && !Array.from(campus.querySelectorAll("button")).some(button => /Recommend my 2027|Match my 2027/.test(button.textContent))),
+        studentActions.map(button => button.textContent.trim()).join(" | ") || "student action missing"
+      );
+      const jobInspectorTargets = jobDetail ? visibleInteractiveTargets(campus, "[data-job-detail] button") : [];
+      report("job inspector controls provide at least 40×40px targets", allTargetsAtLeast40(jobInspectorTargets), targetGeometryDetail(jobInspectorTargets) || `${jobInspectorTargets.length} targets`);
+      const connectBatchEvidence = primaryStudentAction;
+      if (connectBatchEvidence) {
+        connectBatchEvidence.focus();
+        connectBatchEvidence.click();
+      }
+      let batchEvidence = await waitFor(() => campus.querySelector("[data-batch-evidence]"), "batch evidence requirements").catch(() => null);
+      await new Promise(resolve => setTimeout(resolve, 40));
+      report("batch dialog receives focus when it opens", Boolean(batchEvidence && batchEvidence.contains(campus.activeElement)), campus.activeElement ? campus.activeElement.textContent.trim().slice(0, 80) : "no active element");
+      if (dataAnalystRow) dataAnalystRow.focus();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      report("batch dialog keeps keyboard navigation out of the background", Boolean(batchEvidence && batchEvidence.contains(campus.activeElement)), campus.activeElement ? campus.activeElement.textContent.trim().slice(0, 80) : "no active element");
+      campus.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      await new Promise(resolve => setTimeout(resolve, 40));
+      report("Escape closes batch evidence and restores the job action", !campus.querySelector("[data-batch-evidence]") && campus.activeElement === connectBatchEvidence, campus.activeElement ? campus.activeElement.textContent.trim() : "focus not restored");
+      if (connectBatchEvidence) connectBatchEvidence.click();
+      batchEvidence = await waitFor(() => campus.querySelector("[data-batch-evidence]"), "reopened batch evidence requirements").catch(() => null);
+      const batchEvidenceText = batchEvidence ? batchEvidence.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "batch evidence explains data requirements before any roster is connected",
+        Boolean(batchEvidence && /match not calculated/i.test(batchEvidenceText) && /department/i.test(batchEvidenceText) && /skills/i.test(batchEvidenceText) && /eligibility/i.test(batchEvidenceText) && /consent/i.test(batchEvidenceText) && /Connect demo batch evidence/.test(batchEvidenceText)),
+        batchEvidenceText || "batch evidence missing"
+      );
+      const batchDialogTargets = batchEvidence ? visibleInteractiveTargets(campus, "[data-batch-evidence] button, [data-batch-evidence] input") : [];
+      report("batch dialog controls provide at least 40×40px targets", allTargetsAtLeast40(batchDialogTargets), targetGeometryDetail(batchDialogTargets) || `${batchDialogTargets.length} targets`);
+      const connectDemo = batchEvidence && Array.from(batchEvidence.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
+      if (connectDemo) connectDemo.click();
+      const potentialMatches = await waitFor(() => campus.querySelector("[data-batch-evidence] [data-batch-match]"), "deterministic demo roster").catch(() => null);
+      const potentialMatchText = potentialMatches ? potentialMatches.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "connected demo roster shows potential matches with explicit reasons and no auto-recommendation",
+        Boolean(potentialMatches && /Potential matches to review/.test(potentialMatchText) && potentialMatches.querySelectorAll("[data-student-reason]").length > 0 && !/students to recommend|recommended automatically|auto-send|sent automatically/i.test(potentialMatchText)),
+        potentialMatchText || "potential matches missing"
+      );
+      const closeBatchEvidence = batchEvidence && Array.from(batchEvidence.querySelectorAll("button")).find(button => button.textContent.trim() === "Close");
+      if (closeBatchEvidence) closeBatchEvidence.click();
+      const companyFromJob = campus.querySelector("button[aria-label='18 alumni counts at Infosys']");
+      if (companyFromJob) companyFromJob.click();
+      const companyAfterJob = await waitFor(() => campus.querySelector("[data-company-evidence]"), "company evidence after an exact job", 700).catch(() => null);
+      report(
+        "opening a company from exact-job evidence clears the incompatible job panel",
+        Boolean(companyAfterJob && !campus.querySelector("[data-job-detail]")),
+        campus.querySelector("[data-job-detail]") ? "stale exact-job panel remains" : companyAfterJob ? "company evidence visible" : "company evidence missing"
+      );
+      const closeJobOrCompany = campus.querySelector("button[aria-label='Close job evidence']") || campus.querySelector("[data-screen-label='Inspector'] button[aria-label='Close']");
+      if (closeJobOrCompany) closeJobOrCompany.click();
+      await waitFor(
+        () => !campus.querySelector("[data-job-detail]") || campus.querySelector("[data-job-detail]").getBoundingClientRect().width === 0,
+        "job evidence to close before the radar pointer check"
+      );
+      const transitionInspectorClose = campus.querySelector("[data-screen-label='Inspector'] button[aria-label='Close']");
+      if (transitionInspectorClose) transitionInspectorClose.click();
+      await waitFor(
+        () => {
+          const panel = campus.querySelector("[data-screen-label='Inspector']");
+          return !panel || panel.getBoundingClientRect().width === 0;
+        },
+        "transition inspector cleanup before the radar pointer check"
+      );
+
+      const infosys = campus.querySelector("button[aria-label='18 alumni counts at Infosys']");
+      const infosysPerson = campus.querySelector("button[aria-label^='Software Engineer at Infosys']");
+      const radarTarget = infosys.getBoundingClientRect();
+      const personTarget = infosysPerson.getBoundingClientRect();
+      report("radar company targets are at least 40×40px", radarTarget.width >= 40 && radarTarget.height >= 40, `${Math.round(radarTarget.width)}×${Math.round(radarTarget.height)}px`);
+      report("radar person targets are at least 40×40px", personTarget.width >= 40 && personTarget.height >= 40, `${Math.round(personTarget.width)}×${Math.round(personTarget.height)}px`);
+      report("demo-only controls are grouped away from product navigation", Boolean(campus.querySelector("[data-demo-tools]")));
+
+      const infosysHit = campus.elementFromPoint(radarTarget.left + radarTarget.width / 2, radarTarget.top + radarTarget.height / 2);
+      const infosysPointerTarget = infosysHit && infosysHit.closest("button");
+      if (infosysPointerTarget) infosysPointerTarget.click();
+      await waitFor(
+        () => {
+          const panel = campus.querySelector("[data-screen-label='Inspector']");
+          const rect = panel && panel.getBoundingClientRect();
+          return rect && rect.width > 0 && rect.height > 0 ? panel : false;
+        },
+        "inspector after the Infosys radar pointer hit"
+      );
+      const inspector = campus.querySelector("[data-screen-label='Inspector']");
+      const tape = campus.querySelector("[data-screen-label='Market tape']");
+      const sweep = campus.querySelector("[data-radar-sweep]");
+      const selectedSignal = campus.querySelector(".radar-target .inspect-motion");
+      const close = campus.querySelector("button[aria-label='Close']");
+      const taskShell = campus.querySelector("[data-screen-label='Campus office']");
+      const inspectorStyle = inspector ? getComputedStyle(inspector) : null;
+      const inspectorRect = inspector ? inspector.getBoundingClientRect() : null;
+      const tapeStyle = tape ? getComputedStyle(tape) : null;
+      const tapeRect = tape ? tape.getBoundingClientRect() : null;
+      const closeRect = close ? close.getBoundingClientRect() : null;
+
+      report("opening an inspector activates a quiet task mode", taskShell && taskShell.classList.contains("is-task-mode"));
+      report(
+        "focus moves into the opened evidence inspector",
+        Boolean(inspector && campus.activeElement === inspector),
+        campus.activeElement ? `${campus.activeElement.tagName.toLowerCase()}${campus.activeElement.getAttribute("data-screen-label") ? ` · ${campus.activeElement.getAttribute("data-screen-label")}` : ""}` : "no active element"
+      );
+      const freeCompanyPreview = inspector && inspector.querySelector("[data-free-pro-preview]");
+      const freeCompanyText = freeCompanyPreview ? freeCompanyPreview.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "a free company view previews the concrete Pro plan before activation",
+        Boolean(freeCompanyPreview && /Free: message one alumnus/.test(freeCompanyText) && /Pro: review all 2 AI drafts/.test(freeCompanyText) && /Build AI action plan/.test(freeCompanyText)),
+        freeCompanyText || "Free company Pro preview missing"
+      );
+      const inviteAction = Array.from(campus.querySelectorAll("[data-screen-label='Inspector'] button")).find(button => /Invite 2027/.test(button.textContent));
+      report(
+        "the normal invite control identifies itself as a simulated demo action before use",
+        Boolean(inviteAction && /simulated|demo/i.test(inviteAction.textContent)),
+        inviteAction ? inviteAction.textContent.trim() : "invite control missing"
+      );
+      if (inviteAction) inviteAction.click();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const inviteToast = campus.querySelector(".toast[role='status'][aria-live='polite']");
+      const inviteToastText = inviteToast ? inviteToast.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "local invite feedback exposes a simulated Queued demo action",
+        Boolean(inviteAction && /simulated|demo/i.test(inviteToastText) && /Queued/.test(inviteToastText) && !/2027 invites queued from the placement office/i.test(inviteToastText)),
+        inviteToastText || "invite feedback missing"
+      );
+      const inspectorCompanyLogo = await waitFor(() => {
+        const image = inspector && inspector.querySelector("img[data-logo]");
+        return image && image.complete && image.naturalWidth > 0 ? image : false;
+      }, "loaded inspector company logo");
+      const inspectorLogoRect = inspectorCompanyLogo.getBoundingClientRect();
+      const inspectorLogoTileRect = inspectorCompanyLogo.parentElement.getBoundingClientRect();
+      report("loaded inspector logos fully cover the colored fallback", Math.abs(inspectorLogoRect.width - inspectorLogoTileRect.width) <= 1 && Math.abs(inspectorLogoRect.height - inspectorLogoTileRect.height) <= 1 && getComputedStyle(inspectorCompanyLogo).backgroundColor === "rgb(255, 255, 255)", `${Math.round(inspectorLogoRect.width)}×${Math.round(inspectorLogoRect.height)} image in ${Math.round(inspectorLogoTileRect.width)}×${Math.round(inspectorLogoTileRect.height)} tile`);
+      report("the radar sweep stays active while a company is selected", sweep && getComputedStyle(sweep).animationPlayState === "running", sweep ? getComputedStyle(sweep).animationPlayState : "radar sweep missing");
+      report("the selected company signal keeps tracking in the radar", selectedSignal && getComputedStyle(selectedSignal).animationPlayState === "running", selectedSignal ? getComputedStyle(selectedSignal).animationPlayState : "selected signal missing");
+      const companyEvidence = inspector && inspector.querySelector("[data-company-evidence]");
+      const evidencePaths = companyEvidence ? Array.from(companyEvidence.querySelectorAll("[data-evidence-path]")) : [];
+      const evidencePathNames = evidencePaths.map(path => path.getAttribute("data-evidence-path"));
+      const evidenceConclusion = companyEvidence && companyEvidence.querySelector("[data-evidence-conclusion]");
+      const evidenceLiveRegion = companyEvidence && companyEvidence.querySelector("[data-company-evidence-status]");
+      const evidenceNode = companyEvidence && companyEvidence.querySelector("[data-skill-tree] [data-evidence-node='campus-match']");
+      report(
+        "a real pointer hit on the Infosys radar signal opens company evidence before a contact",
+        Boolean(companyEvidence),
+        infosysPointerTarget ? `${infosysPointerTarget.className || "button"} · ${infosysPointerTarget.getAttribute("aria-label") || infosysPointerTarget.textContent.trim()}` : "no pointer target"
+      );
+      report(
+        "company inspection assembles curriculum, alumni-role, and hiring-data evidence paths",
+        Boolean(companyEvidence && evidencePathNames.length === 3 && ["curriculum", "alumni-roles", "hiring-data"].every(name => evidencePathNames.includes(name))),
+        evidencePathNames.join(", ") || "company evidence missing"
+      );
+      report(
+        "company evidence explains the strongest path in plain language",
+        Boolean(evidenceConclusion && /Strongest path:/i.test(evidenceConclusion.textContent) && /CSE|ECE|Mechanical|EEE/.test(evidenceConclusion.textContent)),
+        evidenceConclusion ? evidenceConclusion.textContent.replace(/\s+/g, " ").trim() : "conclusion missing"
+      );
+      report(
+        "constellation holds its completion announcement until the path assembly finishes",
+        Boolean(evidenceLiveRegion && /Building campus match evidence/i.test(evidenceLiveRegion.textContent) && evidenceNode && evidenceNode.getAttribute("data-evidence-state") === "complete"),
+        evidenceLiveRegion ? evidenceLiveRegion.textContent.replace(/\s+/g, " ").trim() : "completion missing"
+      );
+      report(
+        "company evidence motion assembles while the radar remains active",
+        Boolean(sweep && getComputedStyle(sweep).animationPlayState === "running" && evidenceNode && getComputedStyle(evidenceNode).animationName !== "none"),
+        evidenceNode ? `${getComputedStyle(sweep).animationPlayState}; ${getComputedStyle(evidenceNode).animationName}` : "constellation node missing"
+      );
+      const evidenceTree = companyEvidence && companyEvidence.querySelector("[data-skill-tree]");
+      const evidenceRect = companyEvidence && companyEvidence.getBoundingClientRect();
+      const evidenceTreeRect = evidenceTree && evidenceTree.getBoundingClientRect();
+      report(
+        "company evidence remains visually expanded inside the scrolling inspector",
+        Boolean(evidenceRect && evidenceTreeRect && evidenceRect.height >= evidenceTreeRect.height && evidenceRect.bottom >= evidenceTreeRect.bottom),
+        evidenceRect && evidenceTreeRect ? `section ${Math.round(evidenceRect.height)}px · tree ${Math.round(evidenceTreeRect.height)}px` : "company evidence geometry missing"
+      );
+      report("inspector uses a purposeful 200–300ms entrance", inspectorStyle && inspectorStyle.animationName !== "none" && parseFloat(inspectorStyle.animationDuration) >= 0.2 && parseFloat(inspectorStyle.animationDuration) <= 0.3, inspectorStyle ? `${inspectorStyle.animationName} ${inspectorStyle.animationDuration}` : "inspector missing");
+      const inspectorBeamStyle = inspector ? getComputedStyle(inspector, "::after") : null;
+      report("opening panels use a one-shot radar acquisition beam", inspector && inspector.classList.contains("signal-acquiring") && inspectorStyle.animationName.includes("radarlock") && inspectorBeamStyle.animationName.includes("radarbeam"), inspector && inspectorBeamStyle ? `${inspector.className}; ${inspectorStyle.animationName}; ${inspectorBeamStyle.animationName}` : "inspector acquisition missing");
+      report("the live-jobs rail stays visible above an open inspector", inspectorRect && tapeRect && tapeStyle.display !== "none" && tapeRect.bottom <= inspectorRect.top, inspectorRect && tapeRect ? `rail ${Math.round(tapeRect.top)}–${Math.round(tapeRect.bottom)}px, inspector starts ${Math.round(inspectorRect.top)}px` : "geometry missing");
+      report("inspector close target is at least 40×40px", closeRect && closeRect.width >= 40 && closeRect.height >= 40, closeRect ? `${Math.round(closeRect.width)}×${Math.round(closeRect.height)}px` : "close missing");
+      const inspectorTargets = visibleInteractiveTargets(campus, "[data-screen-label='Inspector'] button, [data-screen-label='Inspector'] input");
+      report("all visible inspector controls provide at least 40×40px targets", allTargetsAtLeast40(inspectorTargets), targetGeometryDetail(inspectorTargets) || `${inspectorTargets.length} targets`);
+      const completedEvidenceStatus = await waitFor(
+        () => evidenceLiveRegion && /Campus match evidence ready/i.test(evidenceLiveRegion.textContent),
+        "constellation completion announcement",
+        1500
+      ).catch(() => null);
+      report(
+        "constellation completion is announced after the staged path assembly",
+        Boolean(completedEvidenceStatus && evidenceNode && evidenceNode.getAttribute("data-evidence-state") === "complete"),
+        completedEvidenceStatus ? evidenceLiveRegion.textContent.replace(/\s+/g, " ").trim() : "ready announcement missing"
+      );
+
+      campus.querySelector("button[aria-label^='Software Engineer at Infosys']").click();
+      await waitFor(
+        () => Array.from(campus.querySelectorAll("button")).some(button => button.textContent.includes("Message on Pulse")),
+        "person message action"
+      );
+      report("contact position is described without internal seat language", campus.body.textContent.includes("Contact 1 of 2") && !campus.body.textContent.includes("Seat 1 of 2 on Pulse"));
+
+      const nextSeat = Array.from(campus.querySelectorAll("button")).find(button => button.textContent.includes("Next"));
+      nextSeat.click();
+      await waitFor(() => campus.body.textContent.includes("Contact 2 of 2"), "second contact content");
+      const settledInspector = campus.querySelector("[data-screen-label='Inspector']");
+      report("seat navigation does not replay the inspector shell", settledInspector && !settledInspector.classList.contains("inspector-enter") && getComputedStyle(settledInspector).animationName === "none", settledInspector ? `${settledInspector.className}, ${getComputedStyle(settledInspector).animationName}` : "inspector missing");
+
+      const freeMessageAction = Array.from(campus.querySelectorAll("[data-screen-label='Inspector'] button")).find(button => /Message on Pulse/.test(button.textContent));
+      if (freeMessageAction) freeMessageAction.click();
+      const freeSendAction = await waitFor(() => Array.from(campus.querySelectorAll("[data-screen-label='Inspector'] button")).find(button => button.textContent.trim() === "Send with Pulse"), "Free outreach send action").catch(() => null);
+      const freeDraftSurface = campus.querySelector("[data-screen-label='Inspector']");
+      const freeDraftText = freeDraftSurface ? freeDraftSurface.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "visible free and follow-up drafts explicitly describe simulated prototype handling",
+        Boolean(freeSendAction && /simulated|demo/i.test(freeDraftText) && !/Pulse is sending this|Pulse will carry this/i.test(freeDraftText)),
+        freeDraftText || "free draft missing"
+      );
+      if (freeSendAction) freeSendAction.click();
+      await new Promise(resolve => setTimeout(resolve, 60));
+      const freeOutreachState = JSON.parse(localStorage.getItem(STORAGE) || "{}");
+      const freeOutreachSurface = campus.querySelector("[data-screen-label='Inspector']");
+      const freeOutreachText = freeOutreachSurface ? freeOutreachSurface.textContent.replace(/\s+/g, " ").trim() : "";
+      const freeStatuses = [...(freeOutreachState.inbox || []), ...(freeOutreachState.today || [])].map(item => item.status);
+      report(
+        "Free outreach uses only Draft, Queued, Sent, or Replied with explicit simulated wording",
+        Boolean(
+          freeSendAction &&
+          freeStatuses.length > 0 &&
+          freeStatuses.every(status => ["draft", "queued", "sent", "replied"].includes(status)) &&
+          /simulated/i.test(freeOutreachText) &&
+          !/\bDelivered\b|Pulse is delivering/i.test(freeOutreachText)
+        ),
+        `${freeStatuses.join(", ") || "no status"} · ${freeOutreachText || "surface missing"}`
+      );
+      const freeInboxButton = Array.from(campus.querySelectorAll(".app-header button")).find(button => button.textContent.includes("Inbox"));
+      if (freeInboxButton) freeInboxButton.click();
+      const freeInboxDialog = await waitFor(() => Array.from(campus.querySelectorAll("[role='dialog']")).find(dialog => /Inbox · stays after midnight/.test(dialog.textContent)), "Free Inbox status").catch(() => null);
+      const freeInboxText = freeInboxDialog ? freeInboxDialog.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "Inbox exposes only explicit simulated Draft, Queued, Sent, or Replied states",
+        Boolean(freeInboxDialog && /simulated/i.test(freeInboxText) && /Sent|Replied|Queued|Draft/.test(freeInboxText) && !/\basked\b|\bDelivered\b/i.test(freeInboxText)),
+        freeInboxText || "Inbox status missing"
+      );
+      const freeInboxRow = freeInboxDialog && Array.from(freeInboxDialog.querySelectorAll("button")).find(button => /Sent · simulated/.test(button.textContent));
+      if (freeInboxRow) freeInboxRow.click();
+      const freeNudge = await waitFor(() => Array.from(campus.querySelectorAll("[role='dialog'] button")).find(button => button.textContent.trim() === "Nudge (demo)"), "simulated reminder action").catch(() => null);
+      if (freeNudge) freeNudge.click();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const queuedReminder = Array.from(campus.querySelectorAll("[role='dialog'] button")).find(button => /reminder/i.test(button.textContent));
+      const reminderToast = campus.querySelector(".toast[role='status'][aria-live='polite']");
+      report(
+        "the post-action reminder control uses the Queued simulated lifecycle instead of Nudged",
+        Boolean(queuedReminder && queuedReminder.textContent.trim() === "Queued · simulated reminder" && reminderToast && /Simulated reminder action/.test(reminderToast.textContent) && /Queued/.test(reminderToast.textContent) && !/Nudged/.test(queuedReminder.textContent)),
+        `${queuedReminder ? queuedReminder.textContent.trim() : "reminder control missing"} · ${reminderToast ? reminderToast.textContent.trim() : "toast missing"}`
+      );
+
+      const queuedCampus = await load({
+        scene: "campus",
+        collegeId: "nitt",
+        claimed: true,
+        profile: { name: "Queue UI Test", email: "queue@nitt.edu", role: "Placement Head" },
+        looks: 3,
+        pro: false,
+        inspectCompany: null,
+        inspectName: null,
+        onPulse: [],
+        inbox: [],
+        today: [],
+        pings: [],
+        view: "radar"
+      }, "queued-campus", ".market-tape-track button:not([tabindex='-1'])");
+      const queuedFocusJob = queuedCampus.querySelector(".market-tape-track button:not([tabindex='-1'])");
+      queuedFocusJob.focus();
+      await new Promise(resolve => setTimeout(resolve, 1700));
+      const queuedStatus = queuedCampus.querySelector("[data-live-feed-status]");
+      report("live arrivals wait behind a new-jobs control while the rail is in use", queuedStatus && /1 new job/i.test(queuedStatus.textContent) && !queuedCampus.querySelector(".market-job-new:not([tabindex='-1'])"), queuedStatus ? queuedStatus.textContent.trim() : "queued status missing");
+      if (queuedStatus) queuedStatus.click();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      report("the queued-jobs control reveals the waiting role on demand", Boolean(queuedCampus.querySelector(".market-job-new:not([tabindex='-1'])")));
+
+      const proCampus = await load({
+        scene: "campus",
+        collegeId: "nitt",
+        claimed: true,
+        profile: { name: "Pro UI Test", email: "pro@nitt.edu", role: "Placement Head" },
+        looks: 3,
+        pro: true,
+        inspectCompany: null,
+        inspectName: null,
+        onPulse: [],
+        inbox: [],
+        today: [],
+        pings: [],
+        view: "radar"
+      }, "pro-campus", "button[aria-label^='Software Engineer at Infosys']");
+
+      const proAllowance = proCampus.querySelector("[data-message-allowance]");
+      report("Pro replaces the three-message meter with unlimited outreach", proAllowance && /pro/i.test(proAllowance.textContent) && proAllowance.textContent.includes("∞"), proAllowance ? proAllowance.textContent.trim() : "Pro allowance missing");
+
+      if (proAllowance) proAllowance.click();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      const activeProDialog = proCampus.querySelector("[data-pro-dialog]");
+      report("the active Pro chip reopens its action panel", activeProDialog && /active/i.test(activeProDialog.textContent), activeProDialog ? activeProDialog.textContent.replace(/\s+/g, " ").trim() : "active Pro panel missing");
+      report("the Pro acquisition beam stays clipped to its panel", activeProDialog && getComputedStyle(activeProDialog).overflowX === "hidden", activeProDialog ? getComputedStyle(activeProDialog).overflowX : "active Pro panel missing");
+      const alumniCompaniesAction = activeProDialog && activeProDialog.querySelector("[data-pro-action='companies']");
+      report("active Pro offers a direct route to companies with reachable alumni", alumniCompaniesAction && /6 companies/.test(alumniCompaniesAction.textContent), alumniCompaniesAction ? alumniCompaniesAction.textContent.trim() : "alumni company action missing");
+      if (alumniCompaniesAction) {
+        alumniCompaniesAction.click();
+        await waitFor(() => proCampus.querySelector("[data-company-directory]"), "Pro alumni company directory");
+        const alumniFilter = Array.from(proCampus.querySelectorAll("[data-company-filter]")).find(button => button.textContent.includes("Alumni available"));
+        const alumniResults = Array.from(proCampus.querySelectorAll("[data-company-directory-result]"));
+        report("the Pro alumni action opens a pre-filtered actionable directory", alumniFilter && alumniFilter.getAttribute("aria-pressed") === "true" && alumniResults.length === 6, `${alumniResults.length} companies`);
+        const closeDirectory = proCampus.querySelector("button[aria-label='Close company directory']");
+        if (closeDirectory) closeDirectory.click();
+      }
+
+      const proDataAnalyst = Array.from(proCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Infosys/.test(button.textContent) && /Data Analyst/.test(button.textContent));
+      if (proDataAnalyst) proDataAnalyst.click();
+      const proJobDetail = await waitFor(() => proCampus.querySelector("[data-job-detail]"), "Pro exact job evidence").catch(() => null);
+      const proConnectBatch = proJobDetail && proJobDetail.querySelector("[data-job-primary-action]");
+      if (proConnectBatch) proConnectBatch.click();
+      const proBatchEvidence = await waitFor(() => proCampus.querySelector("[data-batch-evidence]"), "Pro batch evidence").catch(() => null);
+      const proConnectDemo = proBatchEvidence && Array.from(proBatchEvidence.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
+      if (proConnectDemo) proConnectDemo.click();
+      const startPlan = await waitFor(() => proCampus.querySelector("[data-ai-start]"), "Pro AI action-plan start").catch(() => null);
+      report("selected job evidence can become a Pro AI action plan", Boolean(startPlan && /Build AI action plan/.test(startPlan.textContent)), startPlan ? startPlan.textContent.trim() : "AI plan action missing");
+      if (startPlan) startPlan.click();
+      const preparation = await waitFor(() => proCampus.querySelector("[data-ai-preparation][data-plan-stage='analysing']"), "AI evidence analysis").catch(() => null);
+      report(
+        "starting the AI plan dismisses batch evidence so preparation stays visible",
+        Boolean(preparation && !proCampus.querySelector("[data-batch-evidence]")),
+        proCampus.querySelector("[data-batch-evidence]") ? "batch evidence still overlays preparation" : "preparation unobstructed"
+      );
+      report("AI preparation begins by visibly analysing the selected evidence", Boolean(preparation && /Analysing evidence/.test(preparation.textContent)), preparation ? preparation.textContent.replace(/\s+/g, " ").trim() : "analysis stage missing");
+      const drafting = await waitFor(() => proCampus.querySelector("[data-ai-preparation][data-plan-stage='drafting'][data-plan-step='introductions']"), "distinct-introduction drafting").catch(() => null);
+      report("AI preparation visibly progresses from evidence reading to distinct introductions", Boolean(drafting && /Drafting distinct introductions/.test(drafting.textContent)), drafting ? drafting.textContent.replace(/\s+/g, " ").trim() : "drafting stage missing");
+      const briefing = await waitFor(() => proCampus.querySelector("[data-ai-preparation][data-plan-stage='drafting'][data-plan-step='brief']"), "batch opportunity brief").catch(() => null);
+      report("AI preparation visibly drafts the selected-job batch opportunity brief before review", Boolean(briefing && /Drafting batch opportunity brief/.test(briefing.textContent)), briefing ? briefing.textContent.replace(/\s+/g, " ").trim() : "batch brief stage missing");
+      const draftReview = await waitFor(() => proCampus.querySelector("[data-draft-review]"), "AI plan ready for review").catch(() => null);
+      const planItems = Array.from(proCampus.querySelectorAll("[data-plan-item]"));
+      const planText = draftReview ? draftReview.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "ready review contains every available alumnus introduction and the exact selected-job batch brief",
+        Boolean(draftReview && draftReview.getAttribute("data-plan-stage") === "ready" && planItems.length === 3 && planItems.filter(item => item.getAttribute("data-plan-kind") === "alumni").length === 2 && planItems.some(item => item.getAttribute("data-plan-kind") === "batch") && /Data Analyst at Infosys/.test(planText) && /class of/.test(planText) && /evidence used/i.test(planText)),
+        planText || "review plan missing"
+      );
+      const firstPlanItem = planItems[0];
+      if (firstPlanItem) firstPlanItem.click();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      report("reviewed plan items retain explicit selected and skipped states", Boolean(firstPlanItem && firstPlanItem.getAttribute("aria-pressed") === "false" && /Skipped/.test(firstPlanItem.textContent) && planItems.slice(1).every(item => item.getAttribute("aria-pressed") === "true" && /Selected/.test(item.textContent))), planItems.map(item => item.textContent.replace(/\s+/g, " ").trim()).join(" | ") || "selection states missing");
+      const sendPlan = proCampus.querySelector("[data-plan-send]");
+      report("reviewed plans expose Send reviewed plan when selected drafts remain", Boolean(sendPlan && !sendPlan.disabled && /Send reviewed plan/.test(sendPlan.textContent)), sendPlan ? sendPlan.textContent.trim() : "send control missing");
+
+      const secondPlanItem = proCampus.querySelectorAll("[data-plan-item]")[1];
+      if (secondPlanItem) secondPlanItem.click();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const batchPlanItem = proCampus.querySelectorAll("[data-plan-item]")[2];
+      if (batchPlanItem) batchPlanItem.click();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const emptySendPlan = proCampus.querySelector("[data-plan-send]");
+      report("Send reviewed plan is disabled when no reviewed item is selected", Boolean(emptySendPlan && emptySendPlan.disabled && /Select at least one/.test(emptySendPlan.textContent)), emptySendPlan ? emptySendPlan.textContent.trim() : "empty-selection send control missing");
+
+      const reselectSecondPlanItem = proCampus.querySelectorAll("[data-plan-item]")[1];
+      if (reselectSecondPlanItem) reselectSecondPlanItem.click();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const reselectBatchPlanItem = proCampus.querySelectorAll("[data-plan-item]")[2];
+      if (reselectBatchPlanItem) reselectBatchPlanItem.click();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const selectedSendPlan = proCampus.querySelector("[data-plan-send]");
+      if (selectedSendPlan) selectedSendPlan.click();
+      const delivery = await waitFor(() => proCampus.querySelector("[data-delivery-status='sending']"), "reviewed-plan delivery surface").catch(() => null);
+      const deliveryText = delivery ? delivery.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "sending a reviewed plan replaces review with a persistent selected-only delivery surface",
+        Boolean(delivery && !proCampus.querySelector("[data-draft-review]") && delivery.querySelectorAll("[data-delivery-item]").length === 2 && !/Delivered/.test(deliveryText)),
+        deliveryText || "delivery surface missing"
+      );
+      const sendingHeading = delivery && delivery.querySelector("h2, h3");
+      report("Sending is exposed as a proper delivery-surface heading", Boolean(sendingHeading && /Sending reviewed plan/i.test(sendingHeading.textContent)), sendingHeading ? sendingHeading.textContent.trim() : "Sending heading missing");
+      const sendingPanelHeading = proCampus.querySelector("[data-screen-label='Inspector'] h2");
+      report("the top plan heading reflects Sending instead of preparation", Boolean(sendingPanelHeading && sendingPanelHeading.textContent.trim() === "Sending reviewed plan"), sendingPanelHeading ? sendingPanelHeading.textContent.trim() : "top Sending heading missing");
+      const queuedItems = delivery ? Array.from(delivery.querySelectorAll("[data-delivery-item][data-delivery-progress='queued']")) : [];
+      const queuedState = JSON.parse(localStorage.getItem(STORAGE) || "{}");
+      report("delivery begins queued without persisting Inbox or Today outcomes", Boolean(queuedItems.length >= 1 && (queuedState.inbox || []).length === 0 && (queuedState.today || []).length === 0 && (queuedState.batchOutcomes || []).length === 0), `${queuedItems.length} queued, inbox ${(queuedState.inbox || []).length}, today ${(queuedState.today || []).length}, brief ${(queuedState.batchOutcomes || []).length}`);
+      const intermediateDelivery = await waitFor(() => {
+        const surface = proCampus.querySelector("[data-delivery-status='sending']");
+        return surface && surface.querySelector("[data-delivery-item][data-delivery-progress='sending']") ? surface : null;
+      }, "queued to sending delivery progression").catch(() => null);
+      const intermediateState = JSON.parse(localStorage.getItem(STORAGE) || "{}");
+      report("delivery visibly progresses through Sending before any final persistence", Boolean(intermediateDelivery && (intermediateState.inbox || []).length === 0 && (intermediateState.today || []).length === 0 && (intermediateState.batchOutcomes || []).length === 0), intermediateDelivery ? intermediateDelivery.textContent.replace(/\s+/g, " ").trim() : "intermediate Sending state missing");
+      const deliveryReceipt = await waitFor(() => proCampus.querySelector("[data-delivery-status='sent']"), "final reviewed-plan receipt").catch(() => null);
+      const finalState = JSON.parse(localStorage.getItem(STORAGE) || "{}");
+      const finalText = deliveryReceipt ? deliveryReceipt.textContent.replace(/\s+/g, " ").trim() : "";
+      report(
+        "final receipt guides replies to Inbox and persists only selected alumni plus the batch brief outcome",
+        Boolean(deliveryReceipt && /Plan sent · replies will appear in Inbox/.test(finalText) && /2 selected.*Infosys/.test(finalText) && /View in Inbox/.test(finalText) && /Back to campus/.test(finalText) && (finalState.inbox || []).length === 1 && (finalState.today || []).length === 1 && (finalState.batchOutcomes || []).length === 1 && (finalState.inbox || []).every(item => item.status === "sent")),
+        finalText || "final delivery receipt missing"
+      );
+      const sentHeading = deliveryReceipt && deliveryReceipt.querySelector("h2, h3");
+      const normalSentTimes = deliveryReceipt ? Array.from(deliveryReceipt.querySelectorAll("[data-sent-at]")).map(node => node.textContent.trim()) : [];
+      report("Sent is exposed as a proper delivery-surface heading", Boolean(sentHeading && /Delivery complete|Plan sent/i.test(sentHeading.textContent)), sentHeading ? sentHeading.textContent.trim() : "Sent heading missing");
+      const sentPanelHeading = proCampus.querySelector("[data-screen-label='Inspector'] h2");
+      report("the top plan heading reflects the completed Sent state", Boolean(sentPanelHeading && sentPanelHeading.textContent.trim() === "Plan sent"), sentPanelHeading ? sentPanelHeading.textContent.trim() : "top Sent heading missing");
+      report(
+        "normal-motion delivery timestamps every Sent row and persists the same deterministic labels",
+        Boolean(
+          deliveryReceipt &&
+          normalSentTimes.length === 2 &&
+          normalSentTimes.every(label => /^Day 1 · \d{2}:\d{2} IST$/.test(label)) &&
+          [...(finalState.inbox || []), ...(finalState.today || []), ...(finalState.batchOutcomes || [])].every(item => item.sentAt && normalSentTimes.includes(item.sentAt))
+        ),
+        `${normalSentTimes.join(", ") || "no rendered timestamps"} · persisted ${[...(finalState.inbox || []), ...(finalState.today || []), ...(finalState.batchOutcomes || [])].map(item => item.sentAt || "missing").join(", ")}`
+      );
+      const viewInbox = deliveryReceipt && Array.from(deliveryReceipt.querySelectorAll("button")).find(button => button.textContent.trim() === "View in Inbox");
+      if (viewInbox) viewInbox.click();
+      const inboxAfterSend = await waitFor(
+        () => Array.from(proCampus.querySelectorAll("[role='dialog']")).find(dialog => /Inbox · stays after midnight/.test(dialog.textContent)),
+        "Inbox after reviewed-plan delivery"
+      ).catch(() => null);
+      report(
+        "the sent receipt opens Inbox with the selected alumnus outcome",
+        Boolean(inboxAfterSend && /Software Engineer/.test(inboxAfterSend.textContent) && /Infosys/.test(inboxAfterSend.textContent) && /Sent/.test(inboxAfterSend.textContent)),
+        inboxAfterSend ? inboxAfterSend.textContent.replace(/\s+/g, " ").trim() : "Inbox outcome missing"
+      );
+
+      const alumniOnlyCampus = await load({
+        scene: "campus",
+        collegeId: "nitt",
+        claimed: true,
+        profile: { name: "Alumni-only UI Test", email: "alumni-only@nitt.edu", role: "Placement Head" },
+        looks: 3,
+        pro: true,
+        inspectCompany: null,
+        inspectName: null,
+        onPulse: [],
+        inbox: [],
+        today: [],
+        batchOutcomes: [],
+        pings: [],
+        view: "radar"
+      }, "alumni-only-campus", ".market-tape-track button:not([tabindex='-1'])", { reduceMotion: true });
+      const alumniOnlyInfosys = Array.from(alumniOnlyCampus.querySelectorAll(".company-dock button")).find(button => /Infosys/.test(button.textContent));
+      const alumniOnlyInfosysLabel = alumniOnlyInfosys && (alumniOnlyInfosys.getAttribute("aria-label") || alumniOnlyInfosys.getAttribute("title") || alumniOnlyInfosys.textContent);
+      report(
+        "default alumni availability is ready before a reduced-motion Pro flow can begin",
+        Boolean(alumniOnlyInfosysLabel && /2 alumni available/.test(alumniOnlyInfosysLabel)),
+        alumniOnlyInfosysLabel ? alumniOnlyInfosysLabel.replace(/\s+/g, " ").trim() : "Infosys dock item missing"
+      );
+      const alumniOnlyJob = Array.from(alumniOnlyCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Infosys/.test(button.textContent) && /Data Analyst/.test(button.textContent));
+      if (alumniOnlyJob) alumniOnlyJob.click();
+      const alumniOnlyJobDetail = await waitFor(() => alumniOnlyCampus.querySelector("[data-job-detail][data-job-id='j18']"), "alumni-only exact job evidence").catch(() => null);
+      const alumniOnlyConnect = alumniOnlyJobDetail && alumniOnlyJobDetail.querySelector("[data-job-primary-action]");
+      if (alumniOnlyConnect) alumniOnlyConnect.click();
+      const alumniOnlyBatchEvidence = await waitFor(() => alumniOnlyCampus.querySelector("[data-batch-evidence]"), "alumni-only batch evidence").catch(() => null);
+      const alumniOnlyDemo = alumniOnlyBatchEvidence && Array.from(alumniOnlyBatchEvidence.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
+      if (alumniOnlyDemo) alumniOnlyDemo.click();
+      const alumniOnlyStart = await waitFor(() => alumniOnlyCampus.querySelector("[data-ai-start]"), "alumni-only AI plan action").catch(() => null);
+      if (alumniOnlyStart) alumniOnlyStart.click();
+      const alumniOnlyReview = await waitFor(() => alumniOnlyCampus.querySelector("[data-draft-review]"), "alumni-only plan review").catch(() => null);
+      const alumniOnlyItems = Array.from(alumniOnlyCampus.querySelectorAll("[data-plan-item]"));
+      const alumniOnlyBatchItem = alumniOnlyItems.find(item => item.getAttribute("data-plan-kind") === "batch");
+      if (alumniOnlyBatchItem) alumniOnlyBatchItem.click();
+      await new Promise(resolve => setTimeout(resolve, 40));
+      report(
+        "a reviewed selected-job plan can send alumni-only after its batch brief is deselected",
+        Boolean(alumniOnlyReview && alumniOnlyItems.length === 3 && alumniOnlyItems.filter(item => item.getAttribute("data-plan-kind") === "alumni").every(item => item.getAttribute("aria-pressed") === "true") && alumniOnlyBatchItem && alumniOnlyBatchItem.getAttribute("aria-pressed") === "false"),
+        alumniOnlyReview ? alumniOnlyReview.textContent.replace(/\s+/g, " ").trim() : "alumni-only review missing"
+      );
+      const alumniOnlySend = alumniOnlyCampus.querySelector("[data-plan-send]");
+      if (alumniOnlySend) alumniOnlySend.click();
+      const alumniOnlyReceipt = await waitFor(() => alumniOnlyCampus.querySelector("[data-delivery-status='sent']"), "alumni-only sent receipt").catch(() => null);
+      const alumniOnlyState = JSON.parse(localStorage.getItem(STORAGE) || "{}");
+      const alumniOnlyText = alumniOnlyReceipt ? alumniOnlyReceipt.textContent.replace(/\s+/g, " ").trim() : "";
+      const alumniOnlyInboxAction = alumniOnlyReceipt && Array.from(alumniOnlyReceipt.querySelectorAll("button")).find(button => button.textContent.trim() === "View in Inbox");
+      report(
+        "alumni-only delivery persists only introductions and offers the populated Inbox without batch claims",
+        Boolean(alumniOnlyReceipt && /Introductions sent · replies will appear in Inbox/.test(alumniOnlyText) && /2 alumni introductions sent for Infosys/.test(alumniOnlyText) && !/batch brief|campus outcome/i.test(alumniOnlyText) && alumniOnlyInboxAction && /Back to campus/.test(alumniOnlyText) && (alumniOnlyState.inbox || []).length === 2 && (alumniOnlyState.today || []).length === 2 && (alumniOnlyState.batchOutcomes || []).length === 0 && (alumniOnlyState.inbox || []).every(item => item.status === "sent")),
+        alumniOnlyText || "alumni-only receipt missing"
+      );
+
+      const batchOnlyCampus = await load({
+        scene: "campus",
+        collegeId: "nitt",
+        claimed: true,
+        profile: { name: "Batch-only UI Test", email: "batch-only@nitt.edu", role: "Placement Head" },
+        looks: 3,
+        pro: true,
+        inspectCompany: null,
+        inspectName: null,
+        onPulse: [],
+        inbox: [],
+        today: [],
+        pings: [],
+        view: "radar"
+      }, "batch-only-campus", ".market-tape-track button:not([tabindex='-1'])", { reduceMotion: true });
+      const relianceJob = Array.from(batchOnlyCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Process Engineer/.test(button.textContent) && /Reliance Industries/.test(button.textContent));
+      if (relianceJob) relianceJob.click();
+      const relianceDetail = await waitFor(() => batchOnlyCampus.querySelector("[data-job-detail][data-job-id='j10']"), "Reliance Process Engineer evidence").catch(() => null);
+      const relianceConnect = relianceDetail && relianceDetail.querySelector("[data-job-primary-action]");
+      if (relianceConnect) relianceConnect.click();
+      const relianceBatch = await waitFor(() => batchOnlyCampus.querySelector("[data-batch-evidence]"), "Reliance batch evidence").catch(() => null);
+      const relianceDemo = relianceBatch && Array.from(relianceBatch.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
+      if (relianceDemo) relianceDemo.click();
+      const relianceRoster = await waitFor(() => batchOnlyCampus.querySelector("[data-batch-match]"), "Reliance job-appropriate demo roster").catch(() => null);
+      const relianceRosterText = relianceRoster ? relianceRoster.textContent.replace(/\s+/g, " ").trim() : "";
+      const relianceReasons = relianceRoster ? Array.from(relianceRoster.querySelectorAll("[data-student-reason]")).map(reason => reason.textContent.replace(/\s+/g, " ").trim()) : [];
+      report(
+        "j10 demo roster uses Chemical and Mechanical candidates with selected-role eligibility reasons",
+        Boolean(relianceRoster && relianceReasons.length === 3 && /Chemical/.test(relianceRosterText) && /Mechanical/.test(relianceRosterText) && relianceReasons.every(reason => /branch eligibility confirmed from the selected role/i.test(reason)) && !/\bCSE\b|\bECE\b/.test(relianceRosterText)),
+        relianceRosterText || "Reliance roster missing"
+      );
+      const reliancePlanStart = await waitFor(() => batchOnlyCampus.querySelector("[data-ai-start]"), "batch-only AI plan action").catch(() => null);
+      if (reliancePlanStart) reliancePlanStart.click();
+      const batchOnlyReview = await waitFor(() => batchOnlyCampus.querySelector("[data-draft-review]"), "batch-only plan review").catch(() => null);
+      const batchOnlyItems = Array.from(batchOnlyCampus.querySelectorAll("[data-plan-item]"));
+      report(
+        "a selected job with no available alumni still prepares a batch-only Pro brief",
+        Boolean(batchOnlyReview && batchOnlyItems.length === 1 && batchOnlyItems[0].getAttribute("data-plan-kind") === "batch" && /No alumni are currently available/.test(batchOnlyReview.textContent) && /Process Engineer at Reliance Industries/.test(batchOnlyReview.textContent)),
+        batchOnlyReview ? batchOnlyReview.textContent.replace(/\s+/g, " ").trim() : "batch-only review missing"
+      );
+      const batchOnlySend = batchOnlyCampus.querySelector("[data-plan-send]");
+      if (batchOnlySend) batchOnlySend.click();
+      const reducedDelivery = await waitFor(() => {
+        const surface = batchOnlyCampus.querySelector("[data-delivery-status='sending']");
+        return surface && surface.querySelector("[data-delivery-item][data-delivery-progress='sending']") ? surface : null;
+      }, "reduced-motion delivery progression").catch(() => null);
+      const reducedBeam = reducedDelivery && reducedDelivery.querySelector("[data-delivery-beam]");
+      report(
+        "reduced motion keeps textual Sending progression without beam travel",
+        Boolean(reducedDelivery && /Sending/.test(reducedDelivery.textContent) && reducedBeam && getComputedStyle(reducedBeam).animationName === "none"),
+        reducedDelivery ? `${reducedDelivery.textContent.replace(/\s+/g, " ").trim()} · ${reducedBeam ? getComputedStyle(reducedBeam).animationName : "beam missing"}` : "reduced delivery missing"
+      );
+      const batchOnlyReceipt = await waitFor(() => batchOnlyCampus.querySelector("[data-delivery-status='sent']"), "batch-only sent receipt").catch(() => null);
+      const batchOnlyState = JSON.parse(localStorage.getItem(STORAGE) || "{}");
+      const batchOnlyText = batchOnlyReceipt ? batchOnlyReceipt.textContent.replace(/\s+/g, " ").trim() : "";
+      const batchOnlyInboxAction = batchOnlyReceipt && Array.from(batchOnlyReceipt.querySelectorAll("button")).find(button => button.textContent.trim() === "View in Inbox");
+      report(
+        "batch-only delivery persists only the campus outcome and never routes to an empty Inbox",
+        Boolean(batchOnlyReceipt && /Batch opportunity brief sent · campus outcome recorded/.test(batchOnlyText) && /1 batch opportunity brief recorded for Reliance Industries/.test(batchOnlyText) && !/replies will appear|Inbox/i.test(batchOnlyText) && !batchOnlyInboxAction && /Back to campus/.test(batchOnlyText) && (batchOnlyState.inbox || []).length === 0 && (batchOnlyState.today || []).length === 0 && (batchOnlyState.batchOutcomes || []).length === 1 && batchOnlyState.batchOutcomes[0].status === "sent"),
+        batchOnlyText || "batch-only receipt missing"
+      );
+      const reducedSentTimes = batchOnlyReceipt ? Array.from(batchOnlyReceipt.querySelectorAll("[data-sent-at]")).map(node => node.textContent.trim()) : [];
+      report(
+        "reduced-motion delivery timestamps each Sent row and its persisted batch outcome",
+        Boolean(reducedSentTimes.length === 1 && /^Day 1 · \d{2}:\d{2} IST$/.test(reducedSentTimes[0]) && batchOnlyState.batchOutcomes[0] && batchOnlyState.batchOutcomes[0].sentAt === reducedSentTimes[0] && batchOnlyState.batchOutcomes[0].companyKey === "reliance" && batchOnlyState.batchOutcomes[0].company === "Reliance Industries"),
+        `${reducedSentTimes.join(", ") || "no rendered timestamp"} · ${batchOnlyState.batchOutcomes[0] && batchOnlyState.batchOutcomes[0].sentAt || "missing persisted timestamp"} · ${batchOnlyState.batchOutcomes[0] && batchOnlyState.batchOutcomes[0].companyKey || "missing canonical company key"}`
+      );
+      const visibleBatchOutcome = batchOnlyCampus.querySelector("[data-batch-outcome]");
+      report(
+        "a recorded batch outcome remains retrievable in Today with its Sent timestamp",
+        Boolean(visibleBatchOutcome && /Reliance Industries/.test(visibleBatchOutcome.textContent) && /Sent/.test(visibleBatchOutcome.textContent) && /Day 1/.test(visibleBatchOutcome.textContent)),
+        visibleBatchOutcome ? visibleBatchOutcome.textContent.replace(/\s+/g, " ").trim() : "Today batch outcome missing"
+      );
+
+      const lockedDeliveryCampus = await load({
+        scene: "campus",
+        collegeId: "nitt",
+        claimed: true,
+        profile: { name: "Locked delivery UI Test", email: "locked-delivery@nitt.edu", role: "Placement Head" },
+        looks: 3,
+        pro: true,
+        inspectCompany: null,
+        inspectName: null,
+        onPulse: [],
+        inbox: [],
+        today: [],
+        batchOutcomes: [],
+        pings: [],
+        view: "radar"
+      }, "locked-delivery-navigation", ".market-tape-track button:not([tabindex='-1'])", { reduceMotion: true });
+      const lockedRelianceJob = Array.from(lockedDeliveryCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Process Engineer/.test(button.textContent) && /Reliance Industries/.test(button.textContent));
+      if (lockedRelianceJob) lockedRelianceJob.click();
+      const lockedRelianceDetail = await waitFor(() => lockedDeliveryCampus.querySelector("[data-job-detail][data-job-id='j10']"), "locked Reliance job evidence").catch(() => null);
+      const lockedConnect = lockedRelianceDetail && lockedRelianceDetail.querySelector("[data-job-primary-action]");
+      if (lockedConnect) lockedConnect.click();
+      const lockedBatch = await waitFor(() => lockedDeliveryCampus.querySelector("[data-batch-evidence]"), "locked delivery batch evidence").catch(() => null);
+      const lockedDemo = lockedBatch && Array.from(lockedBatch.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
+      if (lockedDemo) lockedDemo.click();
+      const lockedPlanStart = await waitFor(() => lockedDeliveryCampus.querySelector("[data-ai-start]"), "locked delivery plan action").catch(() => null);
+      if (lockedPlanStart) lockedPlanStart.click();
+      const lockedSend = await waitFor(() => lockedDeliveryCampus.querySelector("[data-plan-send]"), "locked delivery reviewed plan").catch(() => null);
+      if (lockedSend) lockedSend.click();
+      const lockedSending = await waitFor(() => lockedDeliveryCampus.querySelector("[data-delivery-status='sending']"), "locked Sending surface").catch(() => null);
+      const lockedReportAction = Array.from(lockedDeliveryCampus.querySelectorAll(".app-header button")).find(button => button.textContent.trim() === "Report");
+      const lockedCompanyAction = lockedDeliveryCampus.querySelector("button[aria-label='18 alumni counts at Infosys']");
+      const lockedJobAction = Array.from(lockedDeliveryCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Data Analyst/.test(button.textContent) && /Infosys/.test(button.textContent));
+      const lockedAdvanceAction = Array.from(lockedDeliveryCampus.querySelectorAll("[data-demo-tools] button")).find(button => button.textContent.trim() === "Advance one day");
+      const lockedNavigationControls = [lockedReportAction, lockedCompanyAction, lockedJobAction, lockedAdvanceAction].filter(Boolean);
+      const lockedDayBefore = (JSON.parse(localStorage.getItem(STORAGE) || "{}").day || 1);
+      report(
+        "Sending explains and disables report, company, job, and next-day navigation until Sent",
+        Boolean(lockedSending && /Navigation is locked until every selected item reaches Sent/i.test(lockedSending.textContent) && lockedNavigationControls.length === 4 && lockedNavigationControls.every(control => control.disabled)),
+        `${lockedNavigationControls.map(control => `${control.textContent.trim().slice(0, 24)}:${control.disabled}`).join(", ")} · ${lockedSending ? lockedSending.textContent.replace(/\s+/g, " ").trim() : "Sending surface missing"}`
+      );
+      lockedNavigationControls.forEach(control => control.click());
+      if (lockedAdvanceAction) {
+        lockedAdvanceAction.disabled = false;
+        lockedAdvanceAction.click();
+      }
+      await new Promise(resolve => setTimeout(resolve, 40));
+      const guardedDeliveryState = JSON.parse(localStorage.getItem(STORAGE) || "{}");
+      const guardedSending = lockedDeliveryCampus.querySelector("[data-delivery-status='sending']");
+      const guardedDailyDrop = Array.from(lockedDeliveryCampus.querySelectorAll("[role='dialog']")).find(dialog => /Daily drop/.test(dialog.textContent));
+      report(
+        "the next-day handler defensively preserves an active atomic send",
+        Boolean(guardedSending && !guardedDailyDrop && guardedDeliveryState.day === lockedDayBefore && (guardedDeliveryState.batchOutcomes || []).length === 0),
+        `day ${guardedDeliveryState.day}; Sending ${Boolean(guardedSending)}; Daily Drop ${Boolean(guardedDailyDrop)}; outcomes ${(guardedDeliveryState.batchOutcomes || []).length}`
+      );
+      const lockedReceipt = await waitFor(() => lockedDeliveryCampus.querySelector("[data-delivery-status='sent']"), "Sent surface after blocked navigation attempts", 1800).catch(() => null);
+      const lockedDeliveryState = JSON.parse(localStorage.getItem(STORAGE) || "{}");
+      report(
+        "Sending cannot be hidden or background-complete through report, company, job, or next-day actions",
+        Boolean(lockedReceipt && !lockedDeliveryCampus.querySelector("[data-screen-label='Campus report']") && !lockedDeliveryCampus.querySelector("[data-job-detail]") && !lockedDeliveryCampus.querySelector("[role='dialog']") && lockedDeliveryState.day === lockedDayBefore && (lockedDeliveryState.batchOutcomes || []).length === 1),
+        `${lockedReceipt ? "Sent surface visible" : "delivery hidden"}; report ${Boolean(lockedDeliveryCampus.querySelector("[data-screen-label='Campus report']"))}; job ${Boolean(lockedDeliveryCampus.querySelector("[data-job-detail]"))}; dialog ${Boolean(lockedDeliveryCampus.querySelector("[role='dialog']"))}; day ${lockedDeliveryState.day}; outcomes ${(lockedDeliveryState.batchOutcomes || []).length}`
+      );
+
+      const resetDeliveryCampus = await load({
+        scene: "campus",
+        collegeId: "nitt",
+        claimed: true,
+        profile: { name: "Reset delivery UI Test", email: "reset-delivery@nitt.edu", role: "Placement Head" },
+        looks: 3,
+        pro: true,
+        inspectCompany: null,
+        inspectName: null,
+        onPulse: [],
+        inbox: [],
+        today: [],
+        batchOutcomes: [],
+        pings: [],
+        view: "radar"
+      }, "reset-during-delivery", ".market-tape-track button:not([tabindex='-1'])", { reduceMotion: true });
+      const resetRelianceJob = Array.from(resetDeliveryCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Process Engineer/.test(button.textContent) && /Reliance Industries/.test(button.textContent));
+      if (resetRelianceJob) resetRelianceJob.click();
+      const resetRelianceDetail = await waitFor(() => resetDeliveryCampus.querySelector("[data-job-detail][data-job-id='j10']"), "Reset Reliance Process Engineer evidence").catch(() => null);
+      const resetRelianceConnect = resetRelianceDetail && resetRelianceDetail.querySelector("[data-job-primary-action]");
+      if (resetRelianceConnect) resetRelianceConnect.click();
+      const resetRelianceBatch = await waitFor(() => resetDeliveryCampus.querySelector("[data-batch-evidence]"), "Reset Reliance batch evidence").catch(() => null);
+      const resetRelianceDemo = resetRelianceBatch && Array.from(resetRelianceBatch.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
+      if (resetRelianceDemo) resetRelianceDemo.click();
+      const resetReliancePlanStart = await waitFor(() => resetDeliveryCampus.querySelector("[data-ai-start]"), "Reset batch-only AI plan action").catch(() => null);
+      if (resetReliancePlanStart) resetReliancePlanStart.click();
+      await waitFor(() => resetDeliveryCampus.querySelector("[data-plan-send]"), "Reset batch-only review").catch(() => null);
+      const originalSetTimeout = resetDeliveryCampus.defaultView.setTimeout;
+      const deliveryTimerIds = [];
+      resetDeliveryCampus.defaultView.setTimeout = (...args) => {
+        const timer = originalSetTimeout.call(resetDeliveryCampus.defaultView, ...args);
+        deliveryTimerIds.push(timer);
+        return timer;
+      };
+      const resetDeliverySend = resetDeliveryCampus.querySelector("[data-plan-send]");
+      if (resetDeliverySend) resetDeliverySend.click();
+      await waitFor(() => resetDeliveryCampus.querySelector("[data-delivery-status='sending']"), "delivery before Reset").catch(() => null);
+      resetDeliveryCampus.defaultView.setTimeout = originalSetTimeout;
+      const originalClearTimeout = resetDeliveryCampus.defaultView.clearTimeout;
+      const clearedDeliveryTimers = [];
+      resetDeliveryCampus.defaultView.clearTimeout = timer => {
+        clearedDeliveryTimers.push(timer);
+        return originalClearTimeout(timer);
+      };
+      const resetDuringDelivery = Array.from(resetDeliveryCampus.querySelectorAll("button")).find(button => button.textContent.trim() === "Reset demo");
+      if (resetDuringDelivery) resetDuringDelivery.click();
+      await new Promise(resolve => setTimeout(resolve, 420));
+      resetDeliveryCampus.defaultView.clearTimeout = originalClearTimeout;
+      const resetState = JSON.parse(localStorage.getItem(STORAGE) || "{}");
+      report(
+        "Reset cancels active delivery timers and leaves no delayed delivery outcome behind",
+        Boolean(resetDuringDelivery && clearedDeliveryTimers.some(timer => deliveryTimerIds.includes(timer)) && !resetDeliveryCampus.querySelector("[data-delivery-status]") && (resetState.inbox || []).length === 0 && (resetState.today || []).length === 0 && (resetState.batchOutcomes || []).length === 0),
+        `delivery timers ${deliveryTimerIds.length}; cleared delivery timer ${clearedDeliveryTimers.some(timer => deliveryTimerIds.includes(timer))}; delivery ${Boolean(resetDeliveryCampus.querySelector("[data-delivery-status]") )}; inbox ${(resetState.inbox || []).length}; today ${(resetState.today || []).length}; brief ${(resetState.batchOutcomes || []).length}`
+      );
+
+      const reducedCompanyCampus = await load({
+        scene: "campus",
+        collegeId: "nitt",
+        claimed: true,
+        profile: { name: "Reduced company motion", email: "reduced-company@nitt.edu", role: "Placement Head" },
+        looks: 3,
+        pro: false,
+        inspectCompany: null,
+        inspectName: null,
+        onPulse: [],
+        inbox: [],
+        today: [],
+        pings: [],
+        view: "radar"
+      }, "company-evidence-reduced-motion", "button[aria-label='18 alumni counts at Infosys']", { reduceMotion: true });
+      reducedCompanyCampus.querySelector("button[aria-label='18 alumni counts at Infosys']").click();
+      const reducedEvidence = await waitFor(() => reducedCompanyCampus.querySelector("[data-company-evidence]"), "reduced-motion company evidence");
+      const reducedEvidenceNode = reducedEvidence.querySelector("[data-evidence-node='campus-match']");
+      report(
+        "reduced motion keeps company evidence facts while removing constellation animation",
+        Boolean(reducedEvidence.querySelectorAll("[data-evidence-path]").length === 3 && reducedEvidenceNode && getComputedStyle(reducedEvidenceNode).animationName === "none"),
+        reducedEvidenceNode ? getComputedStyle(reducedEvidenceNode).animationName : "constellation node missing"
+      );
+
+      const aliasCompanyCampus = await load({
+        scene: "campus",
+        collegeId: "nitt",
+        claimed: true,
+        profile: { name: "Alias company", email: "alias-company@nitt.edu", role: "Placement Head" },
+        looks: 3,
+        pro: false,
+        inspectCompany: null,
+        inspectName: null,
+        onPulse: [],
+        inbox: [],
+        today: [],
+        pings: [],
+        view: "radar"
+      }, "company-evidence-alias", "button[aria-label='8 alumni counts at Reliance']");
+      aliasCompanyCampus.querySelector("button[aria-label='8 alumni counts at Reliance']").click();
+      const aliasEvidence = await waitFor(() => aliasCompanyCampus.querySelector("[data-company-evidence]"), "aliased company evidence");
+      const aliasHiringPath = aliasEvidence.querySelector("[data-evidence-path='hiring-data']");
+      report(
+        "company aliases carry exact live-role evidence into the employer constellation",
+        Boolean(aliasHiringPath && /Hiring data/.test(aliasHiringPath.textContent) && /Process Engineer is live now/i.test(aliasHiringPath.textContent) && !/no active role is available or claimed/i.test(aliasHiringPath.textContent)),
+        aliasHiringPath ? aliasHiringPath.textContent.replace(/\s+/g, " ").trim() : "Hiring data path missing"
+      );
+      const aliasCompanyLogo = aliasCompanyCampus.querySelector("[data-screen-label='Inspector'] img[data-logo]");
+      const aliasLiveRole = Array.from(aliasCompanyCampus.querySelectorAll("[data-screen-label='Inspector'] button")).find(button => /Process Engineer/.test(button.textContent));
+      if (aliasLiveRole) aliasLiveRole.click();
+      const aliasJobDetail = await waitFor(() => aliasCompanyCampus.querySelector("[data-job-detail][data-job-id='j10']"), "aliased exact job handoff").catch(() => null);
+      const aliasJobLogo = aliasJobDetail && aliasJobDetail.querySelector("img[data-logo]");
+      report(
+        "Reliance company and Reliance Industries job share the canonical logo while preserving exact job display",
+        Boolean(aliasCompanyLogo && aliasCompanyLogo.getAttribute("data-logo") === "ril.com" && aliasJobLogo && aliasJobLogo.getAttribute("data-logo") === "ril.com" && /Process Engineer at Reliance Industries/.test(aliasJobDetail.textContent)),
+        `${aliasCompanyLogo && aliasCompanyLogo.getAttribute("data-logo")} · ${aliasJobLogo && aliasJobLogo.getAttribute("data-logo")} · ${aliasJobDetail ? aliasJobDetail.querySelector("h2").textContent.trim() : "job missing"}`
+      );
+      const closeAliasJob = aliasCompanyCampus.querySelector("button[aria-label='Close job evidence']");
+      if (closeAliasJob) closeAliasJob.click();
+      const aliasDirectoryTrigger = aliasCompanyCampus.querySelector("[data-company-directory-trigger]");
+      if (aliasDirectoryTrigger) aliasDirectoryTrigger.click();
+      const aliasDirectory = await waitFor(() => aliasCompanyCampus.querySelector("[data-company-directory]"), "alias company directory").catch(() => null);
+      const aliasDirectoryReliance = aliasDirectory && Array.from(aliasDirectory.querySelectorAll("[data-company-directory-result]")).find(button => /Reliance/.test(button.textContent));
+      report(
+        "Reliance alias resolves as Hiring now in ranking and directory consumers",
+        Boolean(aliasDirectoryReliance && /Hiring now/.test(aliasDirectoryReliance.textContent)),
+        aliasDirectoryReliance ? aliasDirectoryReliance.textContent.replace(/\s+/g, " ").trim() : "Reliance directory result missing"
+      );
+
+      const reducedJobCampus = await load({
+        scene: "campus",
+        collegeId: "nitt",
+        claimed: true,
+        profile: { name: "Reduced job motion", email: "reduced-job@nitt.edu", role: "Placement Head" },
+        looks: 3,
+        inspectCompany: null,
+        inspectName: null,
+        onPulse: [],
+        inbox: [],
+        today: [],
+        pings: [],
+        view: "radar"
+      }, "job-evidence-reduced-motion", ".market-tape-track button:not([tabindex='-1'])", { reduceMotion: true });
+      const reducedDataAnalyst = Array.from(reducedJobCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Infosys/.test(button.textContent) && /Data Analyst/.test(button.textContent));
+      if (reducedDataAnalyst) reducedDataAnalyst.click();
+      const reducedJobDetail = await waitFor(() => reducedJobCampus.querySelector("[data-job-detail]"), "reduced-motion job evidence").catch(() => null);
+      const reducedJobNode = reducedJobDetail && reducedJobDetail.querySelector("[data-job-evidence] [data-evidence-node='requirements']");
+      report(
+        "reduced motion keeps exact job evidence readable without role-tree animation",
+        Boolean(reducedJobDetail && reducedJobDetail.querySelectorAll("[data-job-evidence] [data-evidence-path]").length === 4 && reducedJobNode && getComputedStyle(reducedJobNode).animationName === "none"),
+        reducedJobNode ? getComputedStyle(reducedJobNode).animationName : "job evidence node missing"
+      );
+
+      const eligibilitySkillExpectations = {
+        j1: [], j2: ["shop-floor exposure"], j3: [], j4: [], j5: ["CNC", "CAD"],
+        j6: ["analog fundamentals"], j7: [], j8: [], j9: [], j10: [],
+        j11: ["HyperMesh", "LS-Dyna"], j12: [], j13: ["DSA"], j14: ["Java", "Python"],
+        j15: [], j16: [], j17: ["C++", "Android"], j18: ["SQL", "Python"],
+        j19: ["React"], j20: [], j21: ["C", "AUTOSAR"], j22: ["systems"],
+        j23: [], j24: [], j25: [], j26: [], j27: []
+      };
+      const prototypeApi = reducedJobCampus.defaultView.PULSE_CAMPUS_PROTOTYPE;
+      const skillFailures = [];
+      if (!prototypeApi || typeof prototypeApi.demoRosterForJob !== "function") {
+        skillFailures.push("prototype roster helper unavailable");
+      } else {
+        reducedJobCampus.defaultView.PULSE_CAMPUS.jobs.forEach(job => {
+          const expected = eligibilitySkillExpectations[job.id];
+          const rows = prototypeApi.demoRosterForJob(job);
+          const validRows = rows.length === 3 && rows.every(row => {
+            const actual = Array.from(row.skills || []);
+            return JSON.stringify(actual) === JSON.stringify(expected) && (expected.length ? expected.every(skill => row.reason.includes(skill)) : /skills require review/i.test(row.reason));
+          });
+          if (!validRows) skillFailures.push(`${job.id}:${job.eligibility} -> ${rows.map(row => `[${(row.skills || []).join(",")}] ${row.reason}`).join(" | ")}`);
+        });
+      }
+      report(
+        "every distinct job eligibility pattern derives only explicit roster skills, including j14 without SQL",
+        skillFailures.length === 0,
+        skillFailures.slice(0, 6).join(" || ") || `${Object.keys(eligibilitySkillExpectations).length} job patterns checked`
+      );
+      const aliasApiReady = prototypeApi && ["canonicalCompanyKey", "sameCompany", "jobsForCompany", "companyLogoDomain"].every(name => typeof prototypeApi[name] === "function");
+      const aliasApiJobs = aliasApiReady ? prototypeApi.jobsForCompany("Reliance") : [];
+      report(
+        "one canonical Reliance registry serves identity, jobs, pings/ranking inputs, logos, and persistence keys",
+        Boolean(
+          aliasApiReady &&
+          prototypeApi.canonicalCompanyKey("Reliance") === "reliance" &&
+          prototypeApi.canonicalCompanyKey("Reliance Industries") === "reliance" &&
+          prototypeApi.sameCompany("Reliance", "Reliance Industries") &&
+          aliasApiJobs.some(job => job.id === "j10" && job.company === "Reliance Industries") &&
+          prototypeApi.companyLogoDomain("Reliance") === "ril.com" &&
+          prototypeApi.companyLogoDomain("Reliance Industries") === "ril.com"
+        ),
+        aliasApiReady ? `${prototypeApi.canonicalCompanyKey("Reliance Industries")} · ${aliasApiJobs.map(job => job.id).join(",")} · ${prototypeApi.companyLogoDomain("Reliance Industries")}` : "canonical alias API missing"
+      );
+      report(
+        "Bosch Global Software reuses the Bosch logo without merging company identity",
+        Boolean(
+          aliasApiReady &&
+          prototypeApi.canonicalCompanyKey("Bosch Global Software") === "bosch global software" &&
+          !prototypeApi.sameCompany("Bosch Global Software", "Bosch") &&
+          prototypeApi.companyLogoDomain("Bosch Global Software") === "bosch.com"
+        ),
+        aliasApiReady ? `${prototypeApi.canonicalCompanyKey("Bosch Global Software")} · ${prototypeApi.companyLogoDomain("Bosch Global Software")}` : "company identity API missing"
+      );
+      report(
+        "bounded harness and fixture window-error capture remains empty",
+        windowErrors.length === 0,
+        windowErrors.length ? windowErrors.join(" | ") : "0 window errors (limit 100)"
+      );
+
+      document.documentElement.dataset.complete = "true";
+      document.documentElement.dataset.failures = String(failures.length);
+      const summary = document.createElement("p");
+      summary.id = "summary";
+      summary.className = failures.length ? "fail" : "pass";
+      summary.textContent = failures.length ? `${failures.length} acceptance checks failed.` : "All acceptance checks passed.";
+      results.after(summary);
+    }
+
+    run().catch(error => {
+      report("test harness completed", false, error.stack || error.message);
+      document.documentElement.dataset.complete = "true";
+      document.documentElement.dataset.failures = "1";
+      const summary = document.createElement("p");
+      summary.id = "summary";
+      summary.className = "fail";
+      summary.textContent = "The acceptance harness could not complete.";
+      results.after(summary);
+    });
+  </script>
+</body>
+</html>
