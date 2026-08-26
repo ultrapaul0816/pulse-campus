@@ -524,7 +524,9 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
             </sc-for>
           </div>
         </sc-if>
-        <p style="color:#8aa0a6;font-size:13px;margin:14px 0 0;text-align:center;max-width:46ch">{{ caption }}</p>
+        <sc-if value="{{ caption }}" hint-placeholder-val="{{ false }}">
+          <p style="color:#8aa0a6;font-size:13px;margin:14px 0 0;text-align:center;max-width:46ch">{{ caption }}</p>
+        </sc-if>
       </div>
 
       <sc-if value="{{ sideOpen }}" hint-placeholder-val="{{ false }}">
@@ -2458,7 +2460,7 @@ class Component extends DCLogic {
       })),
       caption: (() => {
         if (s.jobsOpen) return "Live roles at employers your people already staff. Internship rows are a snapshot, not a live Internshala feed.";
-        if (!inspecting) return "Click a company. See available alumni by role, batch, and city \u2014 never by legal name. Message them on Pulse.";
+        if (!inspecting) return "";
         if (!person) return "Available alumni at this company stay private until they reply. Open jobs sit alongside them.";
         if (s.askOpen) return "This simulated prototype draft stays inside the demo until you choose an action.";
         return "This is a private contact, not a disclosed name. Send a hello on Pulse. HR / pipeline is a later ask, after they reply.";
