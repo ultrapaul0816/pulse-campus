@@ -402,7 +402,7 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
     <sc-if value="{{ isRadarView }}" hint-placeholder-val="{{ true }}">
     <div style="display:grid;gap:28px;padding:8px 0 96px;grid-template-columns:{{ gridCols }};align-items:{{ gridAlign }};justify-items:{{ gridJustify }}">
       <div class="radar-stage" style="display:grid;place-items:center;align-content:start">
-        <div class="{{ zoomCueClass }}" style="position:relative;width:min(420px,90%)">
+        <div class="{{ zoomCueClass }}" style="position:relative;width:min(420px,90%,max(280px,calc(100vh - 400px)))">
           <div role="group" aria-label="Radar view" style="position:absolute;top:2px;left:0;display:flex;flex-direction:column;gap:5px;z-index:4">
             <sc-for list="{{ radarToggle }}" as="rt" hint-placeholder-count="0">
               <button type="button" onClick="{{ rt.pick }}" aria-pressed="{{ rt.active }}" style="border:1px solid #212121;padding:5px 12px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;background:{{ rt.bg }};color:{{ rt.color }};text-align:center">{{ rt.label }}</button>
