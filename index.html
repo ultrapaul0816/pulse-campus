@@ -186,7 +186,7 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
 }
 </style>
 <script>window.hideImg=function(e){var t=(e&&e.target)||e;if(t&&t.style)t.style.display="none"};setInterval(function(){document.querySelectorAll("img[data-logo]").forEach(function(im){var d=im.getAttribute("data-logo");if(!d||d.indexOf("{")>=0||d.indexOf(".")<0)return;if(im.dataset.bound===d)return;im.dataset.bound=d;im.dataset.fb="";im.style.display="";im.onerror=function(){if(!im.dataset.fb){im.dataset.fb="1";im.src="https://www.google.com/s2/favicons?sz=128&domain="+d;}else{im.style.display="none";}};im.onload=function(){if(im.naturalWidth&&im.naturalWidth<24)im.onerror();};im.src=(window.logoSrc?window.logoSrc(d):"./app/logos/"+d+".png");});},400);</script>
-<script src="./app/data.js?v=20260826-final-fix"></script>
+<script src="./app/data.js?v=20260826-dm-path"></script>
 <script src="./app/graph.js"></script>
 <script src="./app/geo.js?v=20260826-distance-3"></script>
 </helmet>
@@ -640,8 +640,23 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
               </div>
               <p class="sr-only" role="status" aria-live="polite">{{ jd.evidenceStatus }}</p>
             </section>
+            <div style="background:#0e1516;border:1px solid #1c3d46;border-radius:12px;padding:12px 14px;margin-top:10px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#3ad6c9">Path to the company</div>
+              <p style="margin:4px 0 0;color:#c5d4d8;font-size:12.5px;line-height:1.45">{{ jd.pathLine }}</p>
+            </div>
+            <sc-if value="{{ jd.dmAskOpen }}" hint-placeholder-val="{{ false }}">
+              <section style="background:#0c1c22;border:1px solid rgba(58,214,201,.4);border-radius:12px;padding:14px;margin-top:10px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8bd7ff">{{ jd.dmAskKicker }}</div>
+                <p style="white-space:pre-wrap;color:#c5d4d8;font-size:12.5px;line-height:1.5;margin:8px 0 10px">{{ jd.dmDraftText }}</p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button type="button" onClick="{{ jd.sendDm }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:600;font-size:13px;background:#3ad6c9;color:#062024">{{ jd.dmSendLabel }}</button>
+                  <button type="button" onClick="{{ jd.closeDmAsk }}" style="background:transparent;color:#9e9e9e;border:1px solid #2a2a2a;border-radius:999px;padding:11px 16px;font-size:13px">Cancel</button>
+                </div>
+              </section>
+            </sc-if>
             <div style="display:grid;gap:8px;margin-top:auto;padding-top:8px">
-              <button data-job-primary-action type="button" onClick="{{ jd.connectBatchEvidence }}" style="border:0;border-radius:999px;padding:12px 18px;font-weight:600;font-size:14px;background:#fff;color:#0a0a0a">Connect 2027 batch evidence</button>
+              <button data-job-primary-action type="button" disabled="{{ jd.primaryDisabled }}" onClick="{{ jd.primaryAction }}" style="border:0;border-radius:999px;padding:12px 18px;font-weight:600;font-size:14px;background:#fff;color:#0a0a0a">{{ jd.primaryLabel }}</button>
+              <button data-job-batch-action type="button" onClick="{{ jd.checkFit }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:10px 18px;font-weight:550;font-size:14px">Check 2027 fit</button>
               <button type="button" onClick="{{ jd.copyBrief }}" style="background:transparent;color:#fcfcfc;border:1px solid #3f3f46;border-radius:999px;padding:10px 18px;font-weight:550;font-size:14px">Copy role brief</button>
             </div>
           </section>
@@ -1334,7 +1349,7 @@ class Component extends DCLogic {
       planStage: null, planStep: null, planItems: [], planCompany: null, planJobId: null, sendItems: [], batchOutcomes: [],
       liveArrivals: [], pendingJobIds: [], newJobId: null,
       bulkOpen: false, bulkSelected: [],
-      view: "radar", radarView: "signal", rangeKm: 0, focusCity: null, zoomCue: false, inboxOpenKey: null, sheetUploaded: false, matchJobId: null, joined: 0, nudged: [],
+      view: "radar", radarView: "signal", rangeKm: 0, focusCity: null, zoomCue: false, dmAskOpen: false, inboxOpenKey: null, sheetUploaded: false, matchJobId: null, joined: 0, nudged: [],
       m: { visits: [], reveals: 0, asks: 0, replies: 0, invites: 0 },
       pings: [], pingNow: null, flash: "", milestoneCue: false, inspectorEnter: false
     };
@@ -1347,7 +1362,7 @@ class Component extends DCLogic {
       const normalizeStatus = item => item && item.status === "asked" ? { ...item, status: "sent" } : item;
       parsed.inbox = (parsed.inbox || []).map(normalizeStatus);
       parsed.today = (parsed.today || []).map(normalizeStatus);
-      return { ...this.defaults(), ...parsed, searchOpen: false, overlay: null, toast: "", toastLeaving: false, askOpen: false, pingNow: null, flash: "", milestoneCue: false, inspectorEnter: false, zoomCue: false, liveArrivals: [], pendingJobIds: [], newJobId: null, bulkOpen: false, bulkSelected: [], companyQuery: "", companyFilter: "all", onboardingStage: null, validationStep: 0, claimError: "", matchBuildKey: 0, matchEvidenceStatus: "", planStage: null, planStep: null, planItems: [], planCompany: null, planJobId: null, sendItems: [] };
+      return { ...this.defaults(), ...parsed, searchOpen: false, overlay: null, toast: "", toastLeaving: false, askOpen: false, pingNow: null, flash: "", milestoneCue: false, inspectorEnter: false, zoomCue: false, dmAskOpen: false, liveArrivals: [], pendingJobIds: [], newJobId: null, bulkOpen: false, bulkSelected: [], companyQuery: "", companyFilter: "all", onboardingStage: null, validationStep: 0, claimError: "", matchBuildKey: 0, matchEvidenceStatus: "", planStage: null, planStep: null, planItems: [], planCompany: null, planJobId: null, sendItems: [] };
     } catch (e) { return this.defaults(); }
   }
   persist() {
@@ -1685,7 +1700,7 @@ class Component extends DCLogic {
   openJob(job) {
     if (!job) return;
     if (!this.state.claimed) { this.set({ claimStep: "form" }); return; }
-    this.transitionPanel({ selectedCompany: job.company, selectedJobId: job.id, jobStream: job.stream, jobCompany: job.company });
+    this.transitionPanel({ selectedCompany: job.company, selectedJobId: job.id, jobStream: job.stream, jobCompany: job.company, dmAskOpen: false });
   }
   openCompany(name) {
     if (!this.state.claimed) { this.set({ claimStep: "form" }); return; }
@@ -1794,6 +1809,37 @@ class Component extends DCLogic {
   }
   openBulkOutreach(company) {
     this.startAIPlan(company, null);
+  }
+  // Direct outreach to a role's decision-maker on Pulse. Role title only — no names until they reply.
+  dmDraft(job) {
+    const camp = this.college();
+    const co = this.emp().companies.find(c => this.sameCompany(c.name, job.company));
+    const evidence = this.state.pro ? this.jobEvidence(job) : null;
+    const opener = "Hello —\n\n" + camp.short + "’s placement office is on Pulse. You have " + job.title + " open in " + job.city + (co ? ", and " + co.n + " " + camp.short + " alumni already work at " + job.company + "." : ".");
+    const aiLine = evidence ? "\n\n" + evidence.conclusion : "";
+    return opener + aiLine + "\n\nWe can brief our 2027 batch against this role and share two fitting profiles for review. Open to a short conversation on Pulse?\n\nSimulated prototype draft. If you choose Send with Pulse, this demo records the outreach as Sent; no external delivery occurs.";
+  }
+  openDmAsk(job) {
+    if (!this.state.claimed) { this.set({ claimStep: "form" }); return; }
+    const existing = this.state.inbox.find(i => i.key === "dm:" + job.id);
+    if (!this.state.pro && this.state.looks <= 0 && !existing) { this.setState({ overlay: "empty" }); return; }
+    this.set({ dmAskOpen: true });
+  }
+  sendDmAsk(job) {
+    if (!this.state.claimed || !job.dm) return;
+    const key = "dm:" + job.id;
+    const existing = this.state.inbox.find(i => i.key === key);
+    if (!this.state.pro && this.state.looks <= 0 && !existing) { this.setState({ overlay: "empty" }); return; }
+    const looks = (!this.state.pro && !existing) ? this.state.looks - 1 : this.state.looks;
+    const sentAt = this.sentTimestamp(0);
+    const display = job.dm + " · " + job.company;
+    const todayRow = { key, name: job.dm, display, company: job.company, role: job.dm, status: "sent", sentAt };
+    const today = this.state.today.some(t => t.key === key) ? this.state.today.map(t => t.key === key ? { ...t, status: "sent", sentAt } : t) : [todayRow, ...this.state.today];
+    const row = { key, name: job.dm, display, company: job.company, role: job.dm, status: "sent", sentAt, kind: "dm", askedDay: this.state.day, reply: existing ? existing.reply : "", askText: this.dmDraft(job) };
+    const inbox = [row, ...this.state.inbox.filter(i => i.key !== key)];
+    this.set({ looks, today, inbox, dmAskOpen: false });
+    this.gain("asks", 1);
+    this.showToast("Simulated outreach to the hiring manager marked Sent. They choose whether to reply.");
   }
   planIntroduction(p, job) {
     const camp = this.college();
@@ -1920,8 +1966,9 @@ class Component extends DCLogic {
       return false;
     }
     const reply = "Happy to stay in touch. Tell me how I can help this year\u2019s batch.";
+    const dmReply = "Send two profiles against the JD and copy our HR \u2014 I\u2019ll take a look this week.";
     const replied = this.state.inbox.filter(i => i.status === "sent").length;
-    const inbox = this.state.inbox.map(i => i.status === "sent" ? { ...i, status: "replied", reply } : i);
+    const inbox = this.state.inbox.map(i => i.status === "sent" ? { ...i, status: "replied", reply: i.kind === "dm" ? dmReply : reply } : i);
     const today = this.state.today.map(t => t.status === "sent" ? { ...t, status: "replied" } : t);
     const m = { ...this.state.m, replies: this.state.m.replies + replied };
     const fresh = [];
@@ -2467,7 +2514,7 @@ class Component extends DCLogic {
       })(),
       onCloseInspect: () => { if (this.navigationLocked()) { this.focusDeliverySurface(); return; } this.clearEvidenceTimer(); this.clearPlanTimers(); this.set({ inspectCompany: null, inspectName: null, inspectRole: null, selectedCompany: null, selectedJobId: null, claimStep: null, askOpen: false, bulkOpen: false, bulkSelected: [], matchEvidenceStatus: "", planStage: null, planStep: null, planItems: [], planCompany: null, planJobId: null, sendItems: [] }); },
       onCloseJobs: () => this.set({ jobsOpen: false }),
-      onCloseJobEvidence: () => this.set({ selectedCompany: null, selectedJobId: null, jobCompany: null }),
+      onCloseJobEvidence: () => this.set({ selectedCompany: null, selectedJobId: null, jobCompany: null, dmAskOpen: false }),
       onCloseOverlay: () => this.setState({ overlay: null }),
       onCloseAsk: () => this.set({ askOpen: false }),
       onCloseBulk: () => { if (this.navigationLocked()) { this.focusDeliverySurface(); return; } this.clearPlanTimers(); this.set({ bulkOpen: false, bulkSelected: [], inspectName: null, inspectRole: null, inspectorEnter: false, planStage: null, planStep: null, planItems: [], planCompany: null, planJobId: null, sendItems: [] }); },
@@ -2774,13 +2821,48 @@ class Component extends DCLogic {
         resultDelay: evidence.resultDelay,
         motionClass: this.reduceMotion ? "is-reduced-motion" : "",
         evidenceStatus: this.reduceMotion ? "Role evidence ready. " + evidence.conclusion : "Role evidence paths assemble from requirements to batch readiness. " + evidence.conclusion,
-        connectBatchEvidence: () => this.set({ matchJobId: selectedJob.id }),
+        checkFit: () => this.set({ matchJobId: selectedJob.id }),
         copyBrief: () => {
           const text = selectedJob.title + " at " + selectedJob.company + ". Eligibility: " + selectedJob.eligibility + ". Review department, skills, eligibility, and consent before any batch action.";
           if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => {});
           this.showToast("Role brief copied. Review evidence before any action.");
         }
       };
+      const dmThread = s.inbox.find(i => i.key === "dm:" + selectedJob.id);
+      const pulseN = this.pulsePeople(selectedJob.company).length;
+      const hasDm = !!selectedJob.dm;
+      vals.jd.pathLine = hasDm
+        ? "Decision-maker on Pulse for this role: " + selectedJob.dm + " · unnamed until they reply."
+        : pulseN > 0
+          ? "No decision-maker on Pulse yet. Route through your " + pulseN + " available alumn" + (pulseN === 1 ? "us" : "i") + " for an HR introduction."
+          : "No decision-maker or available alumni yet. Campus counts are the starting evidence.";
+      if (hasDm && dmThread && dmThread.status === "replied") {
+        vals.jd.primaryLabel = "Hiring manager replied · open Inbox";
+        vals.jd.primaryAction = () => this.setState({ overlay: "inbox" });
+        vals.jd.primaryDisabled = false;
+      } else if (hasDm && dmThread) {
+        vals.jd.primaryLabel = "Sent · simulated — awaiting reply";
+        vals.jd.primaryAction = () => {};
+        vals.jd.primaryDisabled = true;
+      } else if (hasDm) {
+        vals.jd.primaryLabel = s.pro ? "Message the hiring manager · AI draft" : "Message the hiring manager";
+        vals.jd.primaryAction = () => this.openDmAsk(selectedJob);
+        vals.jd.primaryDisabled = false;
+      } else if (pulseN > 0) {
+        vals.jd.primaryLabel = "Ask an alumnus for an HR intro";
+        vals.jd.primaryAction = () => this.openCompany(selectedJob.company);
+        vals.jd.primaryDisabled = false;
+      } else {
+        vals.jd.primaryLabel = "Open campus evidence at " + selectedJob.company;
+        vals.jd.primaryAction = () => this.openCompany(selectedJob.company);
+        vals.jd.primaryDisabled = false;
+      }
+      vals.jd.dmAskOpen = hasDm && s.dmAskOpen;
+      vals.jd.dmAskKicker = "Message the hiring manager · simulated" + (s.pro ? " · AI-tailored from role evidence" : "");
+      vals.jd.dmDraftText = hasDm ? this.dmDraft(selectedJob) : "";
+      vals.jd.dmSendLabel = s.pro ? "Send with Pulse · Pro" : "Send with Pulse · " + s.looks + " left today";
+      vals.jd.sendDm = () => this.sendDmAsk(selectedJob);
+      vals.jd.closeDmAsk = () => this.set({ dmAskOpen: false });
       return vals;
     }
 

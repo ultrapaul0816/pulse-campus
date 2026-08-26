@@ -52,6 +52,7 @@ For the **clickable demo**, the mock seeds a few people as already on Pulse at t
 | Outreach | Free: **3 connections/day, campus-wide**. Pro: reviewed bulk outreach to every selected alumnus available on Pulse. Public-profile counts are never treated as contactable people. |
 | Jobs | Live roles are unmetered **Open now**. Pulse market intelligence + college affinity — not a fake 3-JD tank. Internships are a last Internshala **snapshot** (feed dead since Jun 2025). |
 | Ask | After a name is open. Pulse delivers. Inbox for replies. |
+| Job → human path | Every live role leads with a path to a person, chosen by what Pulse actually holds: a **decision-maker on Pulse** (role title only, `dm` on the job in `data.js` — never a name until they reply) → "Message the hiring manager", review-first draft (AI-tailored from role evidence under Pro), costs a Pulse message, thread lands in Inbox; **no DM but alumni available** → "Ask an alumnus for an HR intro" (existing alumni route); **neither** → open campus evidence. "Check 2027 fit" (formerly "Connect 2027 batch evidence") is a secondary, internal readiness check — batch evidence supports the ask, it is never the first message. |
 | 2027 vs 2026 | Brief 2027. 2026 is incomplete. |
 | Names | Never invent. Demo names are synthesised in `graph.js` and only visible when their key is in `state.onPulse`. |
 | LinkedIn person-search | Rejected (accuracy + DPDP + TPO work). |

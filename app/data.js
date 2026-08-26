@@ -1008,6 +1008,7 @@ window.PULSE_CAMPUS = {
       ctc: "8–12 LPA",
       exp: "0–2 yrs",
       posted: "2d",
+      dm: "Engineering Hiring Manager",
       eligibility: "B.E. Mechanical / Production",
       japan: true,
       alumni: { nitt: 14, vit: 9, bits: 5, nitk: 10, coep: 6, dtu: 0, pesu: 7, rvce: 5, psg: 6, srm: 5, amrita: 6, manipal: 5, jadavpur: 0, anna: 8 }
@@ -1022,6 +1023,7 @@ window.PULSE_CAMPUS = {
       ctc: "7–11 LPA",
       exp: "0–3 yrs",
       posted: "5d",
+      dm: "Plant HR Head",
       eligibility: "B.E. Mechanical; shop-floor exposure a plus",
       japan: true,
       alumni: { nitt: 6, vit: 0, bits: 0, nitk: 0, coep: 5, dtu: 0, pesu: 0, rvce: 0, psg: 7, srm: 0, amrita: 0, manipal: 0, jadavpur: 0, anna: 0 }
@@ -1050,6 +1052,7 @@ window.PULSE_CAMPUS = {
       ctc: "9–14 LPA",
       exp: "1–3 yrs",
       posted: "3d",
+      dm: "Talent Acquisition Lead",
       eligibility: "ECE / EEE / Instrumentation",
       japan: true,
       alumni: { nitt: 9, vit: 6, bits: 7, nitk: 5, coep: 0, dtu: 0, pesu: 0, rvce: 0, psg: 0, srm: 0, amrita: 0, manipal: 0, jadavpur: 4, anna: 6 }
@@ -1064,6 +1067,7 @@ window.PULSE_CAMPUS = {
       ctc: "8–13 LPA",
       exp: "0–2 yrs",
       posted: "6d",
+      dm: "Manufacturing HR Lead",
       eligibility: "Mechanical; CNC / CAD exposure",
       japan: true,
       alumni: { nitt: 4, vit: 0, bits: 0, nitk: 0, coep: 0, dtu: 0, pesu: 0, rvce: 0, psg: 0, srm: 0, amrita: 0, manipal: 0, jadavpur: 0, anna: 0 }
@@ -1176,6 +1180,7 @@ window.PULSE_CAMPUS = {
       ctc: "10–16 LPA",
       exp: "0–2 yrs",
       posted: "1d",
+      dm: "Hiring Manager — Platforms",
       eligibility: "CSE / IT / ECE; strong DSA",
       japan: false,
       alumni: { nitt: 13, vit: 18, bits: 6, nitk: 0, coep: 0, dtu: 0, pesu: 0, rvce: 0, psg: 11, srm: 14, amrita: 10, manipal: 0, jadavpur: 0, anna: 12 }
@@ -1190,6 +1195,7 @@ window.PULSE_CAMPUS = {
       ctc: "12–20 LPA",
       exp: "1–3 yrs",
       posted: "2d",
+      dm: "Engineering Manager",
       eligibility: "CSE / IT; Java or Python services",
       japan: false,
       alumni: { nitt: 7, vit: 9, bits: 0, nitk: 0, coep: 0, dtu: 0, pesu: 0, rvce: 0, psg: 5, srm: 10, amrita: 6, manipal: 0, jadavpur: 0, anna: 7 }
@@ -1246,6 +1252,7 @@ window.PULSE_CAMPUS = {
       ctc: "5–8 LPA",
       exp: "0–1 yr",
       posted: "1d",
+      dm: "Delivery Hiring Manager",
       eligibility: "Any engineering; SQL + Python",
       japan: false,
       alumni: { nitt: 18, vit: 24, bits: 0, nitk: 16, coep: 11, dtu: 12, pesu: 14, rvce: 12, psg: 0, srm: 24, amrita: 12, manipal: 14, jadavpur: 0, anna: 0 }
@@ -1330,6 +1337,7 @@ window.PULSE_CAMPUS = {
       ctc: "8–12 LPA",
       exp: "0–3 yrs",
       posted: "6d",
+      dm: "Robotics Team Lead",
       eligibility: "Mechanical / Mechatronics / EEE",
       japan: true,
       alumni: { nitt: 0, vit: 0, bits: 4, nitk: 0, coep: 0, dtu: 0, pesu: 0, rvce: 0, psg: 0, srm: 0, amrita: 0, manipal: 0, jadavpur: 0, anna: 0 }
