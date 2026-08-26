@@ -1145,7 +1145,25 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
             <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#3ad6c9;margin:0 0 6px">{{ thread.firstName }} &middot; day {{ thread.replyDay }}</div>
             <blockquote style="margin:0 0 14px;padding:12px 14px;border-left:3px solid #08a4b8;background:#0e2a32;color:#d5e6ea;font-size:14px;line-height:1.5">{{ thread.reply }}</blockquote>
             <p style="color:#9e9e9e;font-size:13px;margin:0 0 12px">They requested two profiles. That is the next move &mdash; your students, your pick.</p>
-            <button type="button" onClick="{{ thread.onSendProfiles }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%">Send 2 profiles (demo)</button>
+            <sc-if value="{{ thread.showAiPick }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid rgba(58,214,201,.4);background:#0c1c22;border-radius:12px;padding:12px;margin:0 0 12px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#8bd7ff;margin:0 0 8px">{{ thread.aiPickJobLine }}</div>
+                <sc-for list="{{ thread.aiProfiles }}" as="ap" hint-placeholder-count="0">
+                  <div style="background:#0e0e0e;border:1px solid #1c3d46;border-radius:10px;padding:9px 11px;margin:0 0 6px">
+                    <b style="display:block;font-size:13px">{{ ap.name }}</b>
+                    <small style="display:block;color:#9bb0b6;font-size:11.5px">{{ ap.sub }}</small>
+                    <small style="display:block;color:#6d838a;font-size:11px;margin-top:2px">{{ ap.reason }}</small>
+                  </div>
+                </sc-for>
+                <button type="button" onClick="{{ thread.onSendProfiles }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:600;font-size:13.5px;background:#3ad6c9;color:#062024;width:100%;margin-top:4px">Send both for review (demo)</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ thread.showPlainSend }}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{ thread.onSendProfiles }}" style="border:0;border-radius:999px;padding:11px 18px;font-weight:550;font-size:14px;background:#fff;color:#0a0a0a;width:100%">Send 2 profiles (demo)</button>
+            </sc-if>
+            <sc-if value="{{ thread.profilesSent }}" hint-placeholder-val="{{ false }}">
+              <p style="color:#3ad6c9;font-size:13px;margin:0 0 4px;font-family:'IBM Plex Mono',monospace">Profiles queued · simulated. Their HR is copied.</p>
+            </sc-if>
           </sc-if>
           <sc-if value="{{ thread.waiting }}" hint-placeholder-val="{{ false }}">
             <p style="color:#9e9e9e;font-size:13px;margin:0 0 12px">Sent &middot; simulated prototype status. They choose whether to answer.</p>
@@ -1810,14 +1828,12 @@ class Component extends DCLogic {
   openBulkOutreach(company) {
     this.startAIPlan(company, null);
   }
-  // Direct outreach to a role's decision-maker on Pulse. Role title only — no names until they reply.
+  // Direct outreach to a role's decision-maker on Pulse. A plain connect — no evidence payload,
+  // no profile pitch. Role title only; no names until they reply.
   dmDraft(job) {
     const camp = this.college();
     const co = this.emp().companies.find(c => this.sameCompany(c.name, job.company));
-    const evidence = this.state.pro ? this.jobEvidence(job) : null;
-    const opener = "Hello —\n\n" + camp.short + "’s placement office is on Pulse. You have " + job.title + " open in " + job.city + (co ? ", and " + co.n + " " + camp.short + " alumni already work at " + job.company + "." : ".");
-    const aiLine = evidence ? "\n\n" + evidence.conclusion : "";
-    return opener + aiLine + "\n\nWe can brief our 2027 batch against this role and share two fitting profiles for review. Open to a short conversation on Pulse?\n\nSimulated prototype draft. If you choose Send with Pulse, this demo records the outreach as Sent; no external delivery occurs.";
+    return "Hello —\n\n" + camp.short + "’s placement office is on Pulse. You have " + job.title + " open in " + job.city + (co ? ", and " + co.n + " " + camp.short + " alumni already work at " + job.company + "." : ".") + "\n\nThis is a connect, not a pitch — we’d like to open a line with your team on early-career hiring.\n\nSimulated prototype draft. If you choose Send with Pulse, this demo records the outreach as Sent; no external delivery occurs.";
   }
   openDmAsk(job) {
     if (!this.state.claimed) { this.set({ claimStep: "form" }); return; }
@@ -2624,9 +2640,19 @@ class Component extends DCLogic {
       thread: (() => {
         const it = s.inbox.find(i => i.key === s.inboxOpenKey);
         if (!it) return {};
+        const isDm = it.kind === "dm";
+        const dmJob = isDm ? window.PULSE_CAMPUS.jobs.find(j => "dm:" + j.id === it.key) : null;
+        const aiProfiles = (s.pro && dmJob && it.status === "replied" && !it.profilesSent)
+          ? this.demoRoster(dmJob).slice(0, 2).map(p2 => ({ name: p2.name, sub: p2.dept + (p2.skills && p2.skills.length ? " \u00b7 " + p2.skills.join(", ") : ""), reason: p2.reason }))
+          : [];
         return {
           name: it.display || (it.role + " \u00b7 " + it.company), initials: String(it.role || "A").split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase(),
-          firstName: "this alumnus",
+          firstName: isDm ? "the hiring manager" : "this alumnus",
+          aiProfiles,
+          showAiPick: aiProfiles.length > 0,
+          showPlainSend: it.status === "replied" && !it.profilesSent && !aiProfiles.length,
+          profilesSent: !!it.profilesSent,
+          aiPickJobLine: dmJob ? "Best 2027 fit for " + dmJob.title + " \u00b7 AI-selected from the connected demo roster \u00b7 review before send" : "",
           sub: it.role + " \u00b7 " + it.company,
           askedDay: it.askedDay, replyDay: it.askedDay + 1,
           askText: it.askText || "Simulated outreach · Sent in this demo.",
@@ -2634,7 +2660,12 @@ class Component extends DCLogic {
           reply: it.reply,
           nudgeLabel: s.nudged.includes(it.key) ? "Queued · simulated reminder" : "Nudge (demo)",
           onNudge: () => { if (!s.nudged.includes(it.key)) { this.set({ nudged: [...s.nudged, it.key] }); this.showToast("Simulated reminder action · Queued for this demo."); } },
-          onSendProfiles: () => { this.setState({ overlay: null, inboxOpenKey: null }); this.gain("invites", 1); this.showToast("Simulated profile-share action · Queued for this demo."); }
+          onSendProfiles: () => {
+            const inbox = s.inbox.map(row => row.key === it.key ? { ...row, profilesSent: true } : row);
+            this.set({ inbox });
+            this.gain("invites", 1);
+            this.showToast("Simulated profile-share action · Queued for this demo.");
+          }
         };
       })(),
       inbox: s.inbox.map(i => {
@@ -2845,7 +2876,7 @@ class Component extends DCLogic {
         vals.jd.primaryAction = () => {};
         vals.jd.primaryDisabled = true;
       } else if (hasDm) {
-        vals.jd.primaryLabel = s.pro ? "Message the hiring manager · AI draft" : "Message the hiring manager";
+        vals.jd.primaryLabel = "Connect with the hiring manager";
         vals.jd.primaryAction = () => this.openDmAsk(selectedJob);
         vals.jd.primaryDisabled = false;
       } else if (pulseN > 0) {
@@ -2858,7 +2889,7 @@ class Component extends DCLogic {
         vals.jd.primaryDisabled = false;
       }
       vals.jd.dmAskOpen = hasDm && s.dmAskOpen;
-      vals.jd.dmAskKicker = "Message the hiring manager · simulated" + (s.pro ? " · AI-tailored from role evidence" : "");
+      vals.jd.dmAskKicker = "Connect with the hiring manager · simulated";
       vals.jd.dmDraftText = hasDm ? this.dmDraft(selectedJob) : "";
       vals.jd.dmSendLabel = s.pro ? "Send with Pulse · Pro" : "Send with Pulse · " + s.looks + " left today";
       vals.jd.sendDm = () => this.sendDmAsk(selectedJob);

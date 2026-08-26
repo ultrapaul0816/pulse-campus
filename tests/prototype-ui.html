@@ -625,7 +625,7 @@
       const batchCheckAction = jobDetail && jobDetail.querySelector("[data-job-batch-action]");
       report(
         "exact role evidence leads with the human path and keeps the 2027 check internal",
-        Boolean(primaryStudentAction && /Message the hiring manager/.test(primaryStudentAction.textContent) && batchCheckAction && batchCheckAction.textContent.trim() === "Check 2027 fit" && !Array.from(campus.querySelectorAll("button")).some(button => /Recommend my 2027|Match my 2027|Connect 2027 batch evidence/.test(button.textContent))),
+        Boolean(primaryStudentAction && /Connect with the hiring manager/.test(primaryStudentAction.textContent) && batchCheckAction && batchCheckAction.textContent.trim() === "Check 2027 fit" && !Array.from(campus.querySelectorAll("button")).some(button => /Recommend my 2027|Match my 2027|Connect 2027 batch evidence/.test(button.textContent))),
         studentActions.map(button => button.textContent.trim()).join(" | ") || "student action missing"
       );
       const jobInspectorTargets = jobDetail ? visibleInteractiveTargets(campus, "[data-job-detail] button") : [];
