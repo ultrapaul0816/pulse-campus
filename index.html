@@ -87,7 +87,10 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
 @starting-style{.demo-tools[open] .demo-tools-menu{opacity:0;transform:scale(.95)}}
 .demo-tools-menu button{width:100%;text-align:left;background:transparent;color:var(--text);border:0;border-radius:8px;padding:8px 10px;font-size:13px}
 @media (hover:hover) and (pointer:fine){.demo-tools-menu button:hover{background:#212121}}
-.radar-target,.radar-person-target{display:grid!important;place-items:center!important;width:44px!important;height:44px!important;margin:-22px 0 0 -22px!important}
+.radar-target,.radar-person-target{display:grid!important;place-items:center!important;width:44px!important;height:44px!important;margin:-22px 0 0 -22px!important;transition:left .55s var(--ease-out),top .55s var(--ease-out),opacity .4s ease}
+.dist-ring{transition:inset .55s var(--ease-out)}
+.dist-ring-label{transition:bottom .55s var(--ease-out)}
+.reduce-motion .radar-target,.reduce-motion .radar-person-target,.reduce-motion .dist-ring,.reduce-motion .dist-ring-label{transition:none!important}
 .radar-target>span,.radar-person-target>span{margin:0!important}
 .dock-button{min-width:44px;min-height:44px}
 [data-company-directory-trigger]{min-width:40px;min-height:40px;box-sizing:border-box}
@@ -404,8 +407,8 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
           <div style="position:absolute;left:50%;top:8%;bottom:8%;width:1px;background:rgba(255,255,255,0.08)"></div>
           <div style="position:absolute;top:50%;left:8%;right:8%;height:1px;background:rgba(255,255,255,0.08)"></div>
           <sc-for list="{{ distRings }}" as="dr" hint-placeholder-count="0">
-            <span aria-hidden="true" style="position:absolute;inset:{{ dr.inset }};border-radius:50%;border:1px solid rgba(255,255,255,0.09);pointer-events:none;z-index:1"></span>
-            <span aria-hidden="true" style="position:absolute;left:50%;bottom:{{ dr.inset }};transform:translate(-50%,50%);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#5c6e74;background:#050505;padding:0 5px;border-radius:4px;pointer-events:none;z-index:2">{{ dr.label }}</span>
+            <span class="dist-ring" aria-hidden="true" style="position:absolute;inset:{{ dr.inset }};border-radius:50%;border:1px solid rgba(255,255,255,0.09);pointer-events:none;z-index:1"></span>
+            <span class="dist-ring-label" aria-hidden="true" style="position:absolute;left:50%;bottom:{{ dr.inset }};transform:translate(-50%,50%);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;color:#5c6e74;background:#050505;padding:0 5px;border-radius:4px;pointer-events:none;z-index:2">{{ dr.label }}</span>
           </sc-for>
           <sc-if value="{{ isDistanceRadar }}" hint-placeholder-val="{{ false }}">
             <span aria-hidden="true" style="position:absolute;left:50%;top:2.2%;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.14em;color:#3ad6c9;pointer-events:none;z-index:2">N</span>
@@ -1932,10 +1935,23 @@ class Component extends DCLogic {
   distGeo(name) {
     return window.PULSE_GEO ? window.PULSE_GEO.nearestSite(name, this.state.collegeId) : null;
   }
-  // Log ring scale (base 5 from 10 km): 10 / 50 / 250 / 1000 km land on radii 17 / 26.7 / 36.3 / 44.7.
+  // Log ring scale; the active range filter re-anchors it so the range limit becomes the outer ring (zoom).
+  distScaleSpec() {
+    const range = this.state.rangeKm;
+    if (range === 50) return { base: 2, step: 13.85, rings: [["2", 33], ["10", 19.15], ["50 km", 5.3]] };
+    if (range === 250) return { base: 2, step: 9.2333, rings: [["2", 33], ["10", 23.77], ["50", 14.53], ["250 km", 5.3]] };
+    return { base: 10, step: 9.6667, rings: [["10", 33], ["50", 23.33], ["250", 13.67], ["1,000 km", 5.33]] };
+  }
   distRadius(km) {
-    const r = 17 + 9.6667 * (Math.log(Math.max(km, 1.5) / 10) / Math.log(5));
+    const spec = this.distScaleSpec();
+    const r = 17 + spec.step * (Math.log(Math.max(km, spec.base * 0.15) / spec.base) / Math.log(5));
     return Math.max(12.5, Math.min(46, r));
+  }
+  // Out-of-range companies slide off the rim along their real bearing (the stage clips them).
+  distSlideOut(geo, name) {
+    const j = this.distJitter(name);
+    const a = (geo.bearing - 90) * Math.PI / 180 + j.a;
+    return { left: 50 + 56 * Math.cos(a), top: 50 + 56 * Math.sin(a) };
   }
   // Deterministic per-company jitter so same-city sites don't stack on one point.
   distJitter(name) {
@@ -2046,6 +2062,8 @@ class Component extends DCLogic {
     const distanceView = s.radarView === "distance";
     const geoOf = (name) => distanceView ? this.distGeo(name) : null;
     const inRange = (geo) => !distanceView || s.rangeKm <= 0 || (!!geo && geo.km <= s.rangeKm);
+    const rangeFilterOn = distanceView && s.rangeKm > 0;
+    const dockSource = rangeFilterOn ? rankedCompanies.filter(rc => inRange(this.distGeo(rc.company.name))) : rankedCompanies;
 
     const vals = {
       ...base,
@@ -2085,19 +2103,19 @@ class Component extends DCLogic {
       sideOpen,
       radarCos: emp.companies.map((co, idx, all) => {
         const geo = geoOf(co.name);
+        const outOfRange = !inRange(geo);
         const pos = distanceView
-          ? (geo ? this.distPos(geo, co.name) : this.polar(idx, all.length, 48, 0.14))
+          ? (geo ? (outOfRange ? this.distSlideOut(geo, co.name) : this.distPos(geo, co.name)) : this.polar(idx, all.length, 48, 0.14))
           : this.coPos(idx, all.length);
         const on = this.sameCompany(s.inspectCompany, co.name) && !s.inspectName;
         const ping = !!(s.pingNow && this.sameCompany(s.pingNow.company, co.name));
-        const outOfRange = !inRange(geo);
         return {
           left: pos.left, top: pos.top,
           label: co.n + " alumni counts at " + co.name + (distanceView ? (geo ? " — " + this.distLine(geo) : " — site location unverified") : ""),
           dotBg: on || ping ? "#08a4b8" : "#6d838a",
           dotShadow: on ? "0 0 0 5px rgba(8,164,184,0.22), 0 0 12px rgba(8,164,184,0.55)" : ping ? "0 0 10px rgba(8,164,184,0.7)" : "none",
           dotScale: on ? "scale(1.7)" : "scale(1)",
-          opacity: outOfRange ? 0.1 : inspecting && !on ? 0.32 : distanceView && !geo ? 0.35 : 1,
+          opacity: outOfRange ? 0 : inspecting && !on ? 0.32 : distanceView && !geo ? 0.35 : 1,
           on, ping,
           pingLabel: ping && s.pingNow ? s.pingNow.short : "",
           disabled: this.navigationLocked() || outOfRange,
@@ -2110,9 +2128,10 @@ class Component extends DCLogic {
         return mixed.map((p, idx) => {
           const ring = 22 + (idx % 3) * 8;
           const geo = geoOf(p.company);
+          const outOfRange = !inRange(geo);
           let pos;
           if (distanceView && geo) {
-            const base = this.distPos(geo, p.company);
+            const base = outOfRange ? this.distSlideOut(geo, p.company) : this.distPos(geo, p.company);
             const pa = idx * 2.399;
             pos = { left: base.left + 2.7 * Math.cos(pa), top: base.top + 2.7 * Math.sin(pa) };
           } else if (distanceView) {
@@ -2120,7 +2139,6 @@ class Component extends DCLogic {
           } else {
             pos = this.polar(idx, mixed.length, ring, 0.08);
           }
-          const outOfRange = !inRange(geo);
           const on = person && this.sameCompany(person.company, p.company) && person.name === p.name && person.role === p.role;
           const atCo = this.sameCompany(s.inspectCompany, p.company);
           return {
@@ -2130,7 +2148,7 @@ class Component extends DCLogic {
             dotShadow: on ? "0 0 0 5px rgba(8,164,184,0.22), 0 0 14px rgba(8,164,184,0.7)" : atCo ? "0 0 0 3px rgba(8,164,184,0.18)" : "none",
             dotScale: on ? "scale(1.7)" : atCo ? "scale(1.2)" : "scale(1)",
             dotOpacity: on ? 1 : atCo ? 0.95 : 0.55,
-            opacity: outOfRange ? 0.1 : inspecting && !atCo ? 0.28 : 1,
+            opacity: outOfRange ? 0 : inspecting && !atCo ? 0.28 : 1,
             on,
             disabled: this.navigationLocked() || outOfRange,
             open: () => this.sameCompany(s.inspectCompany, p.company) && !person
@@ -2143,12 +2161,7 @@ class Component extends DCLogic {
       radarStageBg: distanceView
         ? "radial-gradient(circle at 50% 50%, #101416 0%, #050505 72%)"
         : "repeating-radial-gradient(circle at 50% 50%, transparent 0 11.6%, rgba(255,255,255,0.05) 12% 12.3%),radial-gradient(circle at 50% 50%, #141414 0%, #050505 70%)",
-      distRings: distanceView ? [
-        { inset: "33%", label: "10" },
-        { inset: "23.33%", label: "50" },
-        { inset: "13.67%", label: "250" },
-        { inset: "5.33%", label: "1,000 km" }
-      ] : [],
+      distRings: distanceView ? this.distScaleSpec().rings.map(([label, inset]) => ({ label, inset: inset + "%" })) : [],
       radarToggle: [
         { label: "Signal", active: !distanceView, view: "signal" },
         { label: "Distance", active: distanceView, view: "distance" }
@@ -2174,7 +2187,7 @@ class Component extends DCLogic {
         if (!distanceView) return "";
         const withGeo = emp.companies.filter(c => { const g = this.distGeo(c.name); return g && (s.rangeKm <= 0 || g.km <= s.rangeKm); }).length;
         return s.rangeKm > 0
-          ? withGeo + " employers within " + s.rangeKm + " km · north is up"
+          ? withGeo + (withGeo === 1 ? " employer" : " employers") + " within " + s.rangeKm + " km · north is up"
           : "Nearest site to campus · north is up";
       })(),
       echoes: (() => {
@@ -2187,7 +2200,7 @@ class Component extends DCLogic {
           return { left: 50 + r * Math.cos(a), top: 50 + r * Math.sin(a), delay: (i * 0.22) + "s" };
         });
       })(),
-      dock: rankedCompanies.slice(0, 12).map(({ company: co }) => {
+      dock: dockSource.slice(0, 12).map(({ company: co }) => {
         const onP = this.pulsePeople(co.name).length;
         const mk = mark(co.name);
         const live = this.sameCompany(s.inspectCompany, co.name);
@@ -2205,7 +2218,9 @@ class Component extends DCLogic {
           open: () => this.openCompany(co.name)
         };
       }),
-      coCountLine: "Showing " + Math.min(12, emp.companyCount) + " of " + emp.companyCount + " employers",
+      coCountLine: rangeFilterOn
+        ? "Showing " + Math.min(12, dockSource.length) + " of " + dockSource.length + " in range · " + emp.companyCount + " mapped"
+        : "Showing " + Math.min(12, emp.companyCount) + " of " + emp.companyCount + " employers",
       companyDirectoryLabel: "View all " + emp.companyCount,
       onOpenCompanyDirectory: () => this.set({ overlay: "companies", companyQuery: "", companyFilter: "all" }),
       showCompanyDirectory: companyDirectoryOpen,
