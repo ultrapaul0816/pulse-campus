@@ -23,16 +23,21 @@ window.PULSE_GEO = (function () {
     return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
   }
   // Nearest known site of a company to a campus. Returns null when the company has no geo record.
-  function nearestSite(companyName, collegeId) {
-    const camp = CAMPUSES[collegeId];
+  // Nearest known site of a company to an arbitrary point.
+  function nearestSiteToPoint(companyName, lat, lon) {
     const sites = SITES[companyName];
-    if (!camp || !sites || !sites.length) return null;
+    if (!sites || !sites.length || typeof lat !== "number") return null;
     let best = null;
     for (const s of sites) {
-      const km = haversineKm(camp.lat, camp.lon, s.lat, s.lon);
-      if (!best || km < best.km) best = { km, city: s.c, type: s.t, bearing: bearingDeg(camp.lat, camp.lon, s.lat, s.lon) };
+      const km = haversineKm(lat, lon, s.lat, s.lon);
+      if (!best || km < best.km) best = { km, city: s.c, type: s.t, lat: s.lat, lon: s.lon, bearing: bearingDeg(lat, lon, s.lat, s.lon) };
     }
     return best;
   }
-  return { CAMPUSES, SITES, haversineKm, bearingDeg, nearestSite };
+  function nearestSite(companyName, collegeId) {
+    const camp = CAMPUSES[collegeId];
+    if (!camp) return null;
+    return nearestSiteToPoint(companyName, camp.lat, camp.lon);
+  }
+  return { CAMPUSES, SITES, haversineKm, bearingDeg, nearestSite, nearestSiteToPoint };
 })();

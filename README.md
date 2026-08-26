@@ -55,7 +55,9 @@ For the **clickable demo**, the mock seeds a few people as already on Pulse at t
 | 2027 vs 2026 | Brief 2027. 2026 is incomplete. |
 | Names | Never invent. Demo names are synthesised in `graph.js` and only visible when their key is in `state.onPulse`. |
 | LinkedIn person-search | Rejected (accuracy + DPDP + TPO work). |
-| Radar views | **Signal** (default) = activity + availability. **Distance** (free toggle) = real km from campus to each employer's nearest known site, north up, log rings at 10/50/250/1,000 km; the ≤50/≤250 km range filter is **Pro**. Site coordinates come from the College Catchment Explorer dataset plus curated city-level sites for majors (`app/geo.js`) — distances are real, never invented; a company with no geo record sits dimmed at the rim as "location unverified". |
+| Radar views | Both axes mean something in both views. **Signal** (default) = relationship space: angle = sector wedge (rim labels), radius = signal band — alumni-on-Pulse inner, hiring-now middle, counts-only outer (bands agree with the dock ranking; a deterministic relaxation pass keeps 44px targets from swallowing neighbours). **Distance** (free toggle, corner control) = physical space: real km from campus to each employer's nearest known site, north up, log rings at 10/50/250/1,000 km. |
+| Distance zoom | Picking a Pro range (≤50/≤250 km) re-anchors the ring scale so the limit becomes the outer ring; dots animate, out-of-range companies slide off the rim along their real bearing, the hub shrinks, and the dock + count line filter to in-range. **City cluster focus** (Pro chips, e.g. "Bengaluru · 13") re-centers the radar on that city with a 1/5/25 km scale and shows the way back ("campus is 280 km SE"). Sites within ~3 km of a city centre drop the km number and spread around the hub — city-level coordinates must not fake precision. |
+| Geo data | Site coordinates come from the College Catchment Explorer dataset plus curated city-level sites for majors (`app/geo.js`) — distances are real, never invented; a company with no geo record sits dimmed at the rim as "location unverified". |
 | Visual | Grok-dark UI, Cognavi teal `#08a4b8`. Radar dots, not logos (logos clip/blur on the sweep). Dock logos sit in white padded tiles; tiny favicons fall back to initials. |
 
 ---
@@ -110,7 +112,7 @@ mood.md / voice.md / tokens.md   Prototype brand, copy, and design-system guidan
 - **Pro action panel** — company and job evidence remain free; Pro turns the selected evidence into a coordinated review plan
 - **AI preparation** — simulated stages read evidence, draft distinct alumni introductions, add an exact-job batch opportunity brief, then expose selected/skipped review rows; this step never sends
 - **Signal acquisition** — inspectors and dialogs resolve through a one-shot 280ms radar lock/beam; reduced motion receives a restrained fade
-- **Distance radar** — Signal/Distance toggle above the radar; Distance plots each employer at its real bearing and log-scaled km from the campus (nearest site, site type shown in the inspector), with a Pro-gated range filter and in-range count
+- **Two-lens radar** — corner Signal/Distance toggle. Signal: sector wedges + signal bands (on Pulse / hiring / counts). Distance: real bearing + log-scaled km to the nearest site (site named in the inspector while in distance view), Pro range zoom and Pro city-cluster focus, animated dot transitions (disabled under reduced motion)
 - **Campus report** — sector mix, cities, CTC bands, principal brief
 - **Inbox** — threads, timestamps, Send 2 profiles, Nudge
 - **Job evidence** — exact role and stream, then Connect 2027 batch evidence or Copy role brief
