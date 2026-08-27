@@ -29,6 +29,8 @@
 - Strong on-screen movement easing: `cubic-bezier(0.77,0,0.175,1)`.
 - Press feedback: `160ms`; state colour changes: `140ms`; popovers and toasts: `180ms`; inspector panels: `220ms`.
 - Radar acquisition: `280ms` strong ease-out using transform and opacity; job arrival: `240ms` strong ease-out.
+- First-session suite zoom: `1600ms` strong ease-in-out after a `2200ms` hold, so Campus Radar is clearly the tool being opened. Reduced motion keeps the landed layout and fades copy only.
+- First radar opening beams each employer out from the campus disc as the sweep finds it, over three passes (~4s each). Closer dots are stronger alumni counts, angle is region, colour is industry. Reloads skip the acquisition. The reading key sits next to the radar and opens on hover (pointer) or tap (touch).
 - The rare daily-drop sequence uses `360ms` entrances with `50ms` stagger steps.
 - Continuous motion is limited to the idle radar and a slow, linear market crawl. The crawl pauses on hover, keyboard focus, and pointer contact, remains manually scrollable, stops in task mode, and becomes static for reduced-motion users.
 - Opening panels use one radar-lock moment rather than scattered decoration. Live jobs receive one entrance and a temporary `New` treatment; queued arrivals do not move the rail while it is being used.

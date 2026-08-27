@@ -38,14 +38,17 @@
   --duration-drop:360ms;
   --duration-toast-enter:180ms;
   --duration-toast-exit:120ms;
+  --duration-welcome-zoom:1600ms;
   --motion-enter:var(--duration-panel) var(--ease-out);
   --motion-shift:220ms var(--ease-in-out);
 }
 html,body{margin:0;min-height:100%;background:var(--ink)}
 a{color:var(--pulse)}a:hover{color:var(--pulse-bright)}
 button{cursor:pointer;font:inherit;touch-action:manipulation}
-button:not(:disabled),.demo-tools summary{transition:transform var(--duration-press) var(--ease-out)}
-button:not(:disabled):active,.demo-tools summary:active{transform:scale(.97)}
+button:not(:disabled),.demo-tools summary,.radar-key-toggle{transition:transform var(--duration-press) var(--ease-out)}
+button:not(:disabled):active,.demo-tools summary:active,.radar-key-toggle:active{transform:scale(.97)}
+button.radar-target:not(:disabled),button.radar-person-target:not(:disabled){transition:opacity 520ms var(--ease-out),transform 720ms var(--ease-out)}
+button.radar-target:not(:disabled):active,button.radar-person-target:not(:disabled):active{transform:none}
 input,select{font:inherit}
 input{border-color:var(--line-strong)!important}
 input::placeholder{color:#6d838a}
@@ -86,9 +89,63 @@ button:focus-visible,input:focus-visible{outline:2px solid #08a4b8;outline-offse
 .demo-tools:not([open]) .demo-tools-menu{opacity:0;transform:scale(.95);pointer-events:none}
 @starting-style{.demo-tools[open] .demo-tools-menu{opacity:0;transform:scale(.95)}}
 .demo-tools-menu button{width:100%;text-align:left;background:transparent;color:var(--text);border:0;border-radius:8px;padding:8px 10px;font-size:13px}
-@media (hover:hover) and (pointer:fine){.demo-tools-menu button:hover{background:#212121}}
+@media (hover:hover) and (pointer:fine){.demo-tools-menu button:hover{background:#212121}.welcome-skip:hover{color:var(--text)}}
 .radar-target,.radar-person-target{display:grid!important;place-items:center!important;width:44px!important;height:44px!important;margin:-22px 0 0 -22px!important}
 .radar-target>span,.radar-person-target>span{margin:0!important}
+.radar-orbit{position:relative;width:min(420px,90%);aspect-ratio:1;display:grid;place-items:center;overflow:visible;transform-origin:center center;transition:transform var(--duration-welcome-zoom) var(--ease-in-out)}
+.radar-disc{width:100%;aspect-ratio:1;position:relative;z-index:2;border-radius:50%;transform-origin:center center;container-type:size}
+.radar-stage[data-welcome-sky="pulled"] .radar-orbit{transform:scale(.62)}
+.radar-stage[data-welcome-sky="zooming"] .radar-orbit,.radar-stage[data-welcome-sky="landed"] .radar-orbit{transform:none}
+.radar-stage[data-welcome-sky="pulled"] .radar-disc,.radar-stage[data-welcome-sky="zooming"] .radar-disc,.radar-stage[data-welcome-sky="landed"] .radar-disc{transform:none}
+.welcome-copy{position:relative;width:min(640px,100%);margin:0 auto 10px;text-align:center}
+.welcome-copy h2{font-size:clamp(24px,2.8vw,30px);letter-spacing:-.045em;margin:0 0 6px;line-height:1.2}
+.welcome-copy p{margin:0 auto;max-width:48ch;color:var(--text-soft);font-size:13px;line-height:1.45}
+[data-flow-welcome]{position:relative;width:min(640px,100%)}
+.welcome-skip{position:absolute;top:0;right:0;z-index:6;border:0;background:transparent;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;min-width:40px;min-height:40px;padding:8px 10px}
+.radar-stage[data-welcome-sky="zooming"] .welcome-copy{opacity:0;pointer-events:none;transition:opacity 500ms var(--ease-out)}
+.radar-stage[data-welcome-sky="zooming"] .welcome-skip{opacity:1}
+.radar-stage[data-welcome-sky="zooming"] .radar-live-tag{box-shadow:0 0 22px rgba(58,214,201,.6)}
+.radar-stage[data-welcome-sky="pulled"] .radar-target,.radar-stage[data-welcome-sky="zooming"] .radar-target,.radar-stage[data-welcome-sky="pulled"] .radar-person-target,.radar-stage[data-welcome-sky="zooming"] .radar-person-target{opacity:0!important;pointer-events:none!important}
+.radar-disc[data-radar-acquire="scanning"] .radar-sweep{animation-duration:4s}
+.radar-target.is-acquiring{opacity:0;pointer-events:none;transform:translate(calc((50 - var(--x)) * 1cqw),calc((50 - var(--y)) * 1cqw))}
+.radar-target.is-found{transform:none}
+.radar-meta{display:flex;align-items:center;justify-content:center;margin-top:8px;position:relative}
+.radar-key{position:relative}
+.radar-key-toggle{min-width:40px;min-height:40px;border:1px solid var(--line);border-radius:999px;padding:0 12px;background:var(--surface);color:var(--text-soft);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.radar-key.is-open .radar-key-toggle,.radar-key:focus-within .radar-key-toggle{border-color:var(--line-strong);color:var(--text)}
+.radar-key-panel{position:absolute;left:50%;bottom:100%;z-index:12;width:min(320px,72vw);padding:12px 14px 18px;background:var(--surface-raised);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.5);color:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.04em;line-height:1.45;text-align:left;opacity:0;pointer-events:none;transform:translateX(-50%) scale(.95);transform-origin:bottom center;transition:opacity var(--duration-popover) var(--ease-out),transform var(--duration-popover) var(--ease-out)}
+.radar-key-panel::after{content:"";position:absolute;left:0;right:0;top:100%;height:12px}
+.radar-key-panel b{color:var(--text-soft);font-weight:500}
+.radar-key-close{position:absolute;top:4px;right:4px;border:0;background:transparent;color:var(--text-muted);min-width:40px;min-height:40px;border-radius:999px;font-size:16px;line-height:1}
+.radar-key.is-open .radar-key-panel{opacity:1;pointer-events:auto;transform:translateX(-50%)}
+.radar-key.is-dismissed .radar-key-panel{opacity:0!important;pointer-events:none!important;transform:translateX(-50%) scale(.95)!important}
+.radar-swatches{display:flex;flex-wrap:wrap;gap:7px 10px;margin:8px 0 0;padding:0;list-style:none}
+.radar-swatches li{display:flex;align-items:center;gap:5px;color:var(--text-muted)}
+.radar-swatches i{width:7px;height:7px;border-radius:50%;display:block;box-shadow:0 0 8px currentColor}
+@media (hover:hover) and (pointer:fine){
+  .radar-key:hover .radar-key-toggle{border-color:var(--line-strong);color:var(--text)}
+  .radar-key:hover .radar-key-panel{opacity:1;pointer-events:auto;transform:translateX(-50%)}
+}
+.sky-tool{position:absolute;z-index:4;width:10px;height:10px;margin:0;padding:0;border:0;background:transparent;pointer-events:none;transform:translate(-50%,-50%)}
+.sky-tool i{display:block;width:10px;height:10px;border-radius:50%;border:1px solid var(--line-strong);background:#0e0e0e;box-shadow:0 0 0 4px rgba(255,255,255,.04)}
+.sky-tool-label{position:absolute;top:16px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text);text-shadow:0 2px 14px #000,0 0 8px #000;line-height:1.2}
+.sky-tool[data-coming-tool="jobs"],.sky-tool[data-coming-tool="research"],.sky-tool[data-coming-tool="invite"],.sky-tool[data-coming-tool="batch"],.sky-tool[data-coming-tool="alumni"]{left:50%;top:50%}
+.sky-tool[data-coming-tool="jobs"]{transform:translate(-50%,-50%) translate(114px,-157px)}
+.sky-tool[data-coming-tool="research"]{transform:translate(-50%,-50%) translate(185px,61px)}
+.sky-tool[data-coming-tool="invite"]{transform:translate(-50%,-50%) translate(0,196px)}
+.sky-tool[data-coming-tool="batch"]{transform:translate(-50%,-50%) translate(-185px,61px)}
+.sky-tool[data-coming-tool="alumni"]{transform:translate(-50%,-50%) translate(-114px,-157px)}
+.radar-stage[data-welcome-sky="pulled"] .sky-tool[data-coming-tool="jobs"]{transform:translate(-50%,-50%) translate(132px,-182px)}
+.radar-stage[data-welcome-sky="pulled"] .sky-tool[data-coming-tool="research"]{transform:translate(-50%,-50%) translate(214px,70px)}
+.radar-stage[data-welcome-sky="pulled"] .sky-tool[data-coming-tool="invite"]{transform:translate(-50%,-50%) translate(0,227px)}
+.radar-stage[data-welcome-sky="pulled"] .sky-tool[data-coming-tool="batch"]{transform:translate(-50%,-50%) translate(-214px,70px)}
+.radar-stage[data-welcome-sky="pulled"] .sky-tool[data-coming-tool="alumni"]{transform:translate(-50%,-50%) translate(-132px,-182px)}
+.radar-stage[data-welcome-sky="pulled"] .sky-tool{animation:fadein 300ms var(--ease-out) both}
+.radar-stage[data-welcome-sky="zooming"] .sky-tool{opacity:.55;transition:transform var(--duration-welcome-zoom) var(--ease-in-out),opacity var(--duration-welcome-zoom) var(--ease-in-out)}
+.radar-stage[data-welcome-sky="landed"] .sky-tool{opacity:.5}
+.radar-stage[data-welcome-sky="zooming"] .sky-tool-label,.radar-stage[data-welcome-sky="landed"] .sky-tool-label{opacity:0}
+.radar-live-tag{position:absolute;left:50%;bottom:27%;z-index:5;transform:translateX(-50%);font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#062024;background:#3ad6c9;border-radius:999px;padding:4px 8px;white-space:nowrap}
+.radar-stage[data-welcome-sky="pulled"] .radar-meta,.radar-stage[data-welcome-sky="zooming"] .radar-meta{opacity:0;pointer-events:none}
 .dock-button{min-width:44px;min-height:44px}
 [data-company-directory-trigger]{min-width:40px;min-height:40px;box-sizing:border-box}
 .company-logo-image,img[data-logo]{box-sizing:border-box}
@@ -102,7 +159,7 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
 @media (max-width:700px){.company-directory-grid{grid-template-columns:1fr}}
 .journey-step{font-size:11px!important;transition:color var(--duration-state) ease,border-color var(--duration-state) ease,background-color var(--duration-state) ease}
 .milestone-copy.is-changing{animation:statecue var(--duration-state) var(--ease-out) both}
-.inspector{max-height:calc(100vh - 154px)!important;border-color:var(--line)!important;scrollbar-gutter:stable}
+.inspector{max-height:calc(100vh - 154px)!important;border-color:var(--line)!important;scrollbar-gutter:stable;scroll-margin-top:64px}
 .inspector>*{flex-shrink:0}
 .signal-panel{position:relative;isolation:isolate}
 .inspector.inspector-enter{animation:radarlock var(--duration-acquire) var(--ease-out) both;will-change:transform,opacity}
@@ -121,7 +178,7 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
 .job-evidence-tree .match-result .evidence-node{background:#3ad6c9}
 .inspector button{min-height:41px;border-color:var(--line-strong)}
 .target-close{width:44px!important;height:44px!important;border-color:var(--line-strong)!important}
-.market-tape{position:sticky;top:0;z-index:14;width:100%;min-height:38px;margin:9px 0 0;box-sizing:border-box;border:1px solid #212121;border-radius:12px;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.28)}
+.market-tape{position:sticky;top:0;z-index:14;width:100%;min-height:38px;max-height:48px;margin:9px 0 0;box-sizing:border-box;border:1px solid #212121;border-radius:12px;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.28)}
 .market-tape-viewport{overflow-x:auto!important;overflow-y:hidden;overscroll-behavior-inline:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent;-webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 48px),transparent 100%);mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 48px),transparent 100%)}
 .market-tape-track{display:flex;min-width:max-content;will-change:transform}
 .market-tape-sequence{display:flex;gap:22px;align-items:center;padding:3px 8px 3px 14px}
@@ -175,7 +232,18 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
   .toast.is-leaving{opacity:0!important}
   .delivery-beam{animation:none!important;opacity:0!important;transform:none!important}
   .progress-fill{transition:none!important}
+  .radar-disc,.radar-orbit{transition:none!important;transform:none!important}
+  .radar-target,.radar-person-target{transition:none!important}
+  .radar-target.is-acquiring{transform:none!important}
+  .sky-tool{transition:opacity var(--duration-press) ease!important;animation:fadein var(--duration-press) ease both!important}
+  .welcome-copy{transition:opacity var(--duration-press) ease!important}
 }
+.pulse-root.reduce-motion .radar-disc,.pulse-root.reduce-motion .radar-orbit{transition:none!important;transform:none!important;will-change:auto}
+.pulse-root.reduce-motion .radar-target,.pulse-root.reduce-motion .radar-person-target{transition:none!important}
+.pulse-root.reduce-motion .radar-target.is-acquiring{transform:none!important}
+.pulse-root.reduce-motion .radar-key-panel{transform:translateX(-50%)!important}
+.pulse-root.reduce-motion .sky-tool{animation:fadein var(--duration-press) ease both!important;transition:opacity var(--duration-press) ease!important}
+.pulse-root.reduce-motion .welcome-copy{transition:opacity var(--duration-press) ease!important}
 </style>
 <script>window.hideImg=function(e){var t=(e&&e.target)||e;if(t&&t.style)t.style.display="none"};setInterval(function(){document.querySelectorAll("img[data-logo]").forEach(function(im){var d=im.getAttribute("data-logo");if(!d||d.indexOf("{")>=0||d.indexOf(".")<0)return;if(im.dataset.bound===d)return;im.dataset.bound=d;im.dataset.fb="";im.style.display="";im.onerror=function(){if(!im.dataset.fb){im.dataset.fb="1";im.src="https://www.google.com/s2/favicons?sz=128&domain="+d;}else{im.style.display="none";}};im.onload=function(){if(im.naturalWidth&&im.naturalWidth<24)im.onerror();};im.src=(window.logoSrc?window.logoSrc(d):"./app/logos/"+d+".png");});},400);</script>
 <script src="./app/data.js?v=20260826-final-fix"></script>
@@ -222,7 +290,7 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
 </sc-if>
 
 <sc-if value="{{ isCampus }}" hint-placeholder-val="{{ false }}">
-  <div class="campus-shell {{ taskModeClass }}" data-screen-label="Campus office" style="position:relative;z-index:1;width:min(1240px,calc(100% - 48px));margin:0 auto">
+  <div class="campus-shell {{ taskModeClass }}" data-screen-label="Campus office" style="position:relative;z-index:1;width:min(1240px,calc(100% - 48px));margin:0 auto;overflow:visible">
 
     <div class="app-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 8px">
       <div style="display:flex;align-items:center;gap:16px">
@@ -236,7 +304,7 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
         </div>
       </div>
       <div class="product-actions" style="display:flex;gap:8px;align-items:center">
-        <sc-if value="{{ claimed }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ showCampusChrome }}" hint-placeholder-val="{{ false }}">
         <button data-message-allowance type="button" disabled="{{ navigationLocked }}" onClick="{{ onFuel }}" title="{{ fuelTitle }}" style="display:flex;align-items:center;gap:8px;border:1px solid {{ fuelBorder }};background:#141414;border-radius:999px;padding:6px 12px 6px 10px;color:#fcfcfc">
           <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase">{{ fuelLabel }}</span>
           <span style="display:flex;gap:4px">
@@ -310,31 +378,6 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
       </div>
     </sc-if>
 
-    <sc-if value="{{ showWelcome }}" hint-placeholder-val="{{ false }}">
-      <div style="position:fixed;inset:0;z-index:32;display:grid;place-items:center;padding:24px;background:rgba(0,0,0,.78)">
-        <section data-flow-welcome role="dialog" aria-modal="true" aria-labelledby="welcome-title" tabindex="-1" style="width:min(700px,100%);background:#141414;border:1px solid rgba(58,214,201,.55);border-radius:18px;padding:30px;box-shadow:0 26px 80px rgba(0,0,0,.58)">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#3ad6c9;margin-bottom:10px">Office verified · simulated</div>
-          <h2 id="welcome-title" style="font-size:32px;letter-spacing:-.045em;margin:0 0 8px">Welcome to {{ campShort }} on Pulse</h2>
-          <p style="color:#c5d4d8;margin:0 0 18px">Your campus evidence is ready to explore. Start with a company, then decide when coordinated action is useful.</p>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px">
-            <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:13px"><b style="display:block;font-size:24px">{{ welcomeEmployerCount }}</b><span style="font-size:12px;color:#8aa0a6">employers mapped</span></div>
-            <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:13px"><b style="display:block;font-size:24px">{{ welcomeAlumniCount }}</b><span style="font-size:12px;color:#8aa0a6">alumni available on Pulse</span></div>
-            <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:13px"><b style="display:block;font-size:24px">{{ welcomeLiveCount }}</b><span style="font-size:12px;color:#8aa0a6">warm live roles</span></div>
-          </div>
-          <div style="background:#0e0e0e;border:1px solid #212121;border-radius:12px;padding:13px 14px;margin-bottom:14px">
-            <b style="display:block;font-size:13px;margin-bottom:6px">What these signals mean</b>
-            <p style="margin:0;color:#9bb0b6;font-size:12px;line-height:1.55">Public signal = aggregate alumni count. Available on Pulse = a contactable alumnus. Live role = a hiring signal, not yet a student match.</p>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
-            <div style="border:1px solid rgba(8,164,184,.46);border-radius:12px;padding:14px"><b style="display:block;margin-bottom:5px">Free</b><p style="margin:0;color:#c5d4d8;font-size:13px">Free: explore all evidence + 3 introductions/day</p></div>
-            <div style="border:1px solid rgba(58,214,201,.46);border-radius:12px;padding:14px"><b style="display:block;margin-bottom:5px;color:#3ad6c9">Pro</b><p style="margin:0;color:#c5d4d8;font-size:13px">Pro: AI plans and reviewed batch outreach</p></div>
-          </div>
-          <p style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.07em;color:#8aa0a6;margin:0 0 16px">Explore is free. Pro turns evidence into coordinated action.</p>
-          <button type="button" onClick="{{ onEnterRadar }}" style="border:0;border-radius:999px;padding:12px 19px;font-weight:650;font-size:14px;background:#fff;color:#0a0a0a">Enter campus radar</button>
-        </section>
-      </div>
-    </sc-if>
-
     <sc-if value="{{ showMomentum }}" hint-placeholder-val="{{ true }}">
       <div style="display:flex;align-items:center;gap:12px;margin:8px 0 4px">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#8aa0a6;white-space:nowrap">Outreach progress</span>
@@ -349,7 +392,7 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
       </div>
     </sc-if>
 
-    <sc-if value="{{ claimed }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ showCampusChrome }}" hint-placeholder-val="{{ false }}">
     <div class="market-tape {{ tapeClass }}" data-screen-label="Market tape" style="background:#0a0a0a;display:flex;align-items:stretch">
       <div class="market-controls" style="display:flex;align-items:center;gap:6px;padding:10px 14px;border-right:1px solid #212121;flex-shrink:0;background:#0a0a0a">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#8aa0a6;margin-right:4px">Live jobs</span>
@@ -391,14 +434,31 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
     </sc-if>
 
     <sc-if value="{{ isRadarView }}" hint-placeholder-val="{{ true }}">
-    <div style="display:grid;gap:28px;padding:8px 0 96px;grid-template-columns:{{ gridCols }};align-items:{{ gridAlign }};justify-items:{{ gridJustify }}">
-      <div class="radar-stage" style="display:grid;place-items:center;align-content:start">
-        <div style="width:min(420px,90%);aspect-ratio:1;position:relative;border-radius:50%;background:repeating-radial-gradient(circle at 50% 50%, transparent 0 11.6%, rgba(255,255,255,0.05) 12% 12.3%),radial-gradient(circle at 50% 50%, #141414 0%, #050505 70%);box-shadow:0 0 0 1px #3f3f46;overflow:hidden">
+    <div style="display:grid;gap:28px;padding:8px 0 96px;grid-template-columns:{{ gridCols }};align-items:{{ gridAlign }};justify-items:{{ gridJustify }};overflow:visible">
+      <div class="radar-stage" data-welcome-sky="{{ welcomeSky }}" style="display:grid;place-items:center;align-content:start;overflow:visible">
+        <sc-if value="{{ showWelcome }}" hint-placeholder-val="{{ false }}">
+          <div data-flow-welcome>
+            <button class="welcome-skip" data-flow-welcome-skip type="button" onClick="{{ onEnterRadar }}">Skip</button>
+            <section class="welcome-copy" aria-labelledby="welcome-title">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#3ad6c9;margin-bottom:10px">Office verified · simulated</div>
+              <h2 id="welcome-title">{{ welcomeTitle }}</h2>
+              <p>{{ welcomeBody }}</p>
+            </section>
+          </div>
+        </sc-if>
+        <div class="radar-orbit" aria-label="Campus Radar, first release. More Pulse Campus tools coming.">
+          <sc-for list="{{ comingTools }}" as="tool" hint-placeholder-count="5">
+            <div class="sky-tool" data-coming-tool="{{ tool.id }}" title="{{ tool.title }}" style="animation-delay:{{ tool.delay }}">
+              <i aria-hidden="true"></i>
+              <span class="sky-tool-label">{{ tool.label }}</span>
+            </div>
+          </sc-for>
+          <div class="radar-disc" data-radar-acquire="{{ radarAcquire }}" style="background:repeating-radial-gradient(circle at 50% 50%, transparent 0 11.6%, rgba(255,255,255,0.05) 12% 12.3%),radial-gradient(circle at 50% 50%, #141414 0%, #050505 70%);box-shadow:0 0 0 1px #3f3f46;overflow:hidden">
           <div class="radar-sweep" data-radar-sweep style="position:absolute;inset:0;background:conic-gradient(from 0deg, transparent 0 74%, rgba(255,255,255,0.04) 88%, rgba(8,164,184,0.5) 100%);animation:sweep 3.4s linear infinite"></div>
           <div style="position:absolute;left:50%;top:8%;bottom:8%;width:1px;background:rgba(255,255,255,0.08)"></div>
           <div style="position:absolute;top:50%;left:8%;right:8%;height:1px;background:rgba(255,255,255,0.08)"></div>
           <sc-for list="{{ radarCos }}" as="rc" hint-placeholder-count="0">
-            <button class="radar-target" type="button" disabled="{{ rc.disabled }}" onClick="{{ rc.open }}" aria-label="{{ rc.label }}" style="position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;padding:0;border:0;background:transparent;z-index:5;left:{{ rc.left }}%;top:{{ rc.top }}%;opacity:{{ rc.opacity }}">
+            <button class="radar-target {{ rc.acquireClass }}" type="button" disabled="{{ rc.disabled }}" onClick="{{ rc.open }}" aria-label="{{ rc.label }}" title="{{ rc.label }}" data-company="{{ rc.name }}" data-industry="{{ rc.industry }}" data-region="{{ rc.region }}" data-alumni-count="{{ rc.n }}" style="position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;padding:0;border:0;background:transparent;z-index:5;left:{{ rc.left }}%;top:{{ rc.top }}%;--x:{{ rc.left }};--y:{{ rc.top }};opacity:{{ rc.opacity }}">
               <span style="display:block;width:7px;height:7px;margin:7.5px auto;border-radius:50%;background:{{ rc.dotBg }};box-shadow:{{ rc.dotShadow }};transform:{{ rc.dotScale }}"></span>
               <sc-if value="{{ rc.ping }}" hint-placeholder-val="{{ false }}">
                 <span class="ping-motion" style="position:absolute;inset:2px;border-radius:50%;border:1.5px solid rgba(58,214,201,0.8);animation:pingring 1.4s var(--ease-out);pointer-events:none;display:block"></span>
@@ -421,8 +481,30 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
             </button>
           </sc-for>
           <div style="position:absolute;inset:42%;border-radius:50%;background:#0a2229;border:1px solid rgba(58,214,201,0.45);display:grid;place-items:center;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#08a4b8;z-index:3">{{ campInitials }}</div>
+          <sc-if value="{{ showWelcome }}" hint-placeholder-val="{{ false }}">
+            <div class="radar-live-tag">Campus Radar · live</div>
+          </sc-if>
+        </div>
+        </div>
+        <div class="radar-meta">
+          <sc-if value="{{ showRadarLegend }}" hint-placeholder-val="{{ false }}">
+            <div class="radar-key {{ radarKeyClass }}" data-radar-legend onMouseLeave="{{ onRadarKeyLeave }}">
+              <button class="radar-key-toggle" type="button" aria-expanded="{{ radarKeyExpanded }}" aria-controls="radar-key-panel" onClick="{{ onRadarKeyToggle }}">How to read</button>
+              <div class="radar-key-panel" id="radar-key-panel">
+                <button class="radar-key-close" type="button" aria-label="Close reading key" onClick="{{ onRadarKeyClose }}">&times;</button>
+                <p class="sr-only" aria-live="polite">{{ radarStatus }}</p>
+                <div>Signals beam out from campus. <b>Distance</b> = alumni strength. <b>Angle</b> = region. <b>Colour</b> = industry.</div>
+                <ul class="radar-swatches">
+                  <sc-for list="{{ industrySwatches }}" as="sw" hint-placeholder-count="7">
+                    <li><i style="background:{{ sw.color }};color:{{ sw.color }}"></i>{{ sw.label }}</li>
+                  </sc-for>
+                </ul>
+              </div>
+            </div>
+          </sc-if>
         </div>
 
+        <sc-if value="{{ showCampusChrome }}" hint-placeholder-val="{{ true }}">
         <div class="company-dock" style="display:grid;grid-template-columns:repeat(6,44px);justify-content:center;gap:7px 9px;margin-top:14px;max-width:min(520px,100%)">
           <sc-for list="{{ dock }}" as="dk" hint-placeholder-count="0">
             <button class="dock-button {{ dk.motionClass }}" type="button" disabled="{{ dk.disabled }}" onClick="{{ dk.open }}" title="{{ dk.title }}" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;background:{{ dk.bg }};border:1px solid {{ dk.border }};border-radius:6px;padding:4px 3px 2px;color:#c5d4d8">
@@ -478,6 +560,7 @@ img[data-logo]{inset:0!important;width:100%!important;height:100%!important;padd
           </div>
         </sc-if>
         <p style="color:#8aa0a6;font-size:13px;margin:14px 0 0;text-align:center;max-width:46ch">{{ caption }}</p>
+        </sc-if>
       </div>
 
       <sc-if value="{{ sideOpen }}" hint-placeholder-val="{{ false }}">
@@ -1270,7 +1353,7 @@ class Component extends DCLogic {
     return {
       scene: "landing", collegeId: null, query: "", searchOpen: false,
       claimed: false, claimStep: null, profile: { name: "", email: "", role: "Placement Head" },
-      onboardingStage: null, validationStep: 0, claimError: "",
+      onboardingStage: null, validationStep: 0, claimError: "", welcomeSky: null,
       matchBuildKey: 0,
       matchEvidenceStatus: "",
       looks: 3, day: 1, onPulse: [], unlocked: [], today: [], inbox: [],
@@ -1284,7 +1367,8 @@ class Component extends DCLogic {
       bulkOpen: false, bulkSelected: [],
       view: "radar", inboxOpenKey: null, sheetUploaded: false, matchJobId: null, joined: 0, nudged: [],
       m: { visits: [], reveals: 0, asks: 0, replies: 0, invites: 0 },
-      pings: [], pingNow: null, flash: "", milestoneCue: false, inspectorEnter: false
+      pings: [], pingNow: null, flash: "", milestoneCue: false, inspectorEnter: false,
+      radarAcquire: "idle", radarRevealed: [], radarKeyOpen: false, radarKeyDismissed: false
     };
   }
   loadState() {
@@ -1295,11 +1379,11 @@ class Component extends DCLogic {
       const normalizeStatus = item => item && item.status === "asked" ? { ...item, status: "sent" } : item;
       parsed.inbox = (parsed.inbox || []).map(normalizeStatus);
       parsed.today = (parsed.today || []).map(normalizeStatus);
-      return { ...this.defaults(), ...parsed, searchOpen: false, overlay: null, toast: "", toastLeaving: false, askOpen: false, pingNow: null, flash: "", milestoneCue: false, inspectorEnter: false, liveArrivals: [], pendingJobIds: [], newJobId: null, bulkOpen: false, bulkSelected: [], companyQuery: "", companyFilter: "all", onboardingStage: null, validationStep: 0, claimError: "", matchBuildKey: 0, matchEvidenceStatus: "", planStage: null, planStep: null, planItems: [], planCompany: null, planJobId: null, sendItems: [] };
+      return { ...this.defaults(), ...parsed, searchOpen: false, overlay: null, toast: "", toastLeaving: false, askOpen: false, pingNow: null, flash: "", milestoneCue: false, inspectorEnter: false, liveArrivals: [], pendingJobIds: [], newJobId: null, bulkOpen: false, bulkSelected: [], companyQuery: "", companyFilter: "all", onboardingStage: null, validationStep: 0, claimError: "", welcomeSky: null, matchBuildKey: 0, matchEvidenceStatus: "", planStage: null, planStep: null, planItems: [], planCompany: null, planJobId: null, sendItems: [], radarAcquire: parsed.claimed ? "ready" : "idle", radarRevealed: [], radarKeyOpen: false, radarKeyDismissed: false };
     } catch (e) { return this.defaults(); }
   }
   persist() {
-    const { onboardingStage, validationStep, claimError, matchBuildKey, matchEvidenceStatus, planStage, planStep, planItems, planCompany, planJobId, sendItems, ...persistedState } = this.state;
+    const { onboardingStage, validationStep, claimError, welcomeSky, radarAcquire, radarRevealed, radarKeyOpen, radarKeyDismissed, matchBuildKey, matchEvidenceStatus, planStage, planStep, planItems, planCompany, planJobId, sendItems, ...persistedState } = this.state;
     const c = { ...persistedState, searchOpen: false, overlay: null, toast: "", toastLeaving: false, pingNow: null, flash: "", milestoneCue: false, inspectorEnter: false, liveArrivals: [], pendingJobIds: [], newJobId: null, bulkOpen: false, bulkSelected: [] };
     try { localStorage.setItem(this.STORAGE, JSON.stringify(c)); } catch (e) {}
   }
@@ -1329,7 +1413,17 @@ class Component extends DCLogic {
       const dialog = this.activeModal();
       if (dialog && !dialog.contains(event.target)) dialog.focus();
     };
+    this._onDocumentPointerDown = event => {
+      if (!this.state.radarKeyOpen) return;
+      const root = document.querySelector("[data-radar-legend]");
+      if (root && !root.contains(event.target)) this.closeRadarKey();
+    };
     this._onDocumentKeyDown = event => {
+      if (event.key === "Escape" && this.state.radarKeyOpen) {
+        event.preventDefault();
+        this.closeRadarKey();
+        return;
+      }
       const dialog = this.activeModal();
       if (!dialog) return;
       if (event.key === "Escape") {
@@ -1358,15 +1452,17 @@ class Component extends DCLogic {
     };
     document.addEventListener("focusin", this._onDocumentFocusIn);
     document.addEventListener("keydown", this._onDocumentKeyDown);
+    document.addEventListener("pointerdown", this._onDocumentPointerDown);
     this.syncModalFocus();
   }
   componentDidUpdate() {
     this.syncModalFocus();
   }
   componentWillUnmount() {
-    clearInterval(this._poll); clearInterval(this._pinger); clearTimeout(this._pingClear); clearTimeout(this._toastT); clearTimeout(this._toastExitT); clearTimeout(this._flashT); clearTimeout(this._milestoneT); clearTimeout(this._inspectorT); clearTimeout(this._inspectorFocusT); clearTimeout(this._modalFocusT); clearTimeout(this._jobArrivalT); clearTimeout(this._newJobT); this.clearOnboardingTimers(); this.clearEvidenceTimer(); this.clearPlanTimers();
+    clearInterval(this._poll); clearInterval(this._pinger); clearTimeout(this._pingClear); clearTimeout(this._toastT); clearTimeout(this._toastExitT); clearTimeout(this._flashT); clearTimeout(this._milestoneT); clearTimeout(this._inspectorT); clearTimeout(this._inspectorFocusT); clearTimeout(this._modalFocusT); clearTimeout(this._jobArrivalT); clearTimeout(this._newJobT); this.clearOnboardingTimers(); this.clearEvidenceTimer(); this.clearPlanTimers(); this.stopRadarAcquisition();
     document.removeEventListener("focusin", this._onDocumentFocusIn);
     document.removeEventListener("keydown", this._onDocumentKeyDown);
+    document.removeEventListener("pointerdown", this._onDocumentPointerDown);
     if (this.motionQuery && this._onMotionChange) {
       if (this.motionQuery.removeEventListener) this.motionQuery.removeEventListener("change", this._onMotionChange);
       else if (this.motionQuery.removeListener) this.motionQuery.removeListener(this._onMotionChange);
@@ -1531,7 +1627,7 @@ class Component extends DCLogic {
     return demoRosterForJob(job);
   }
   firePing() {
-    if (this.reduceMotion || !this.ready() || this.state.scene !== "campus" || !this.state.claimed || (this.props.pings ?? true) === false) return;
+    if (this.reduceMotion || !this.ready() || this.state.scene !== "campus" || !this.state.claimed || this.state.onboardingStage === "welcome" || this.state.radarAcquire === "scanning" || (this.props.pings ?? true) === false) return;
     const emp = this.emp(); if (!emp) return;
     const cos = emp.companies;
     const camp = this.college();
@@ -1599,7 +1695,7 @@ class Component extends DCLogic {
     });
   }
   navigationLocked() {
-    return this.state.planStage === "sending";
+    return this.state.planStage === "sending" || this.state.onboardingStage === "welcome";
   }
   incompatiblePanelState() {
     return {
@@ -1701,17 +1797,50 @@ class Component extends DCLogic {
   }
   finishValidation() {
     this.clearOnboardingTimers();
-    this.set({ claimed: true, claimStep: null, looks: this.looksMax(), onboardingStage: "welcome", validationStep: 3 }, () => {
+    const welcomeSky = this.reduceMotion ? "landed" : "pulled";
+    this.set({ claimed: true, claimStep: null, looks: this.looksMax(), onboardingStage: "welcome", welcomeSky, validationStep: 3 }, () => {
       this.seedPulse();
-      this.focusOnboardingSurface("[data-flow-welcome]");
+      this.focusOnboardingSurface("[data-flow-welcome-skip]");
+      if (this.reduceMotion) {
+        this._onboardingTimers.push(setTimeout(() => this.enterRadar(), 1400));
+        return;
+      }
+      this._onboardingTimers.push(setTimeout(() => {
+        this.set({ welcomeSky: "zooming" });
+        this._onboardingTimers.push(setTimeout(() => this.enterRadar(), 1600));
+      }, 2200));
     });
   }
   enterRadar() {
     this.clearOnboardingTimers();
-    this.set({ onboardingStage: null, validationStep: 0 }, () => {
+    const names = (this.emp() && this.emp().companies.map(company => company.name)) || [];
+    if (this.reduceMotion) {
+      this.set({ onboardingStage: null, validationStep: 0, welcomeSky: "landed", radarAcquire: "ready", radarRevealed: names }, () => {
+        this.scheduleJobArrival();
+      });
+      return;
+    }
+    this.set({ onboardingStage: null, validationStep: 0, welcomeSky: "landed", radarAcquire: "scanning", radarRevealed: [] }, () => {
       this.scheduleJobArrival();
-      this.showToast("Office verified (simulated). The graph for this campus is yours.");
+      this.startRadarAcquisition();
     });
+  }
+  hasFineHover() {
+    return !!(window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches);
+  }
+  closeRadarKey() {
+    if (!this.state.radarKeyOpen && this.state.radarKeyDismissed) return;
+    this.set({ radarKeyOpen: false, radarKeyDismissed: true });
+  }
+  resetRadarKeyDismissed() {
+    if (this.state.radarKeyOpen || this.state.radarKeyDismissed) this.set({ radarKeyOpen: false, radarKeyDismissed: false });
+  }
+  toggleRadarKey() {
+    if (this.hasFineHover()) {
+      this.closeRadarKey();
+      return;
+    }
+    this.set({ radarKeyOpen: !this.state.radarKeyOpen, radarKeyDismissed: false });
   }
   sentTimestamp(index = 0) {
     const minutes = 9 * 60 + 30 + index * 3;
@@ -1898,10 +2027,154 @@ class Component extends DCLogic {
     return { left: 50 + radius * Math.cos(a), top: 50 + radius * Math.sin(a) };
   }
   coPos(index, total) {
+    const layout = this.radarLayout();
+    const emp = this.emp();
+    const company = emp && emp.companies[index];
+    if (company && layout[company.name]) {
+      const pos = layout[company.name];
+      return { left: pos.left, top: pos.top };
+    }
     let ring = 24, local = index, ringN = Math.min(8, total);
     if (index >= 20) { ring = 44; local = index - 20; ringN = Math.max(total - 20, 1); }
     else if (index >= 8) { ring = 34; local = index - 8; ringN = Math.min(12, total - 8); }
     return this.polar(local, ringN, ring, 0.1);
+  }
+  cityRegion(city) {
+    const name = String(city || "");
+    if (["Tokyo", "Yokohama", "Osaka", "Kobe", "Nagoya"].includes(name)) return "japan";
+    if (["Bengaluru", "Chennai", "Coimbatore", "Hyderabad", "Mangaluru", "Manipal", "Tiruchirappalli"].includes(name)) return "south";
+    if (["Mumbai", "Pune", "Nashik", "Ahmedabad"].includes(name)) return "west";
+    if (["Delhi", "Delhi NCR", "Gurugram", "Gurgaon", "Noida", "Jaipur"].includes(name)) return "north";
+    if (["Kolkata", "Bhubaneswar"].includes(name)) return "east";
+    return "other";
+  }
+  companyRegion(company) {
+    if (company.type === "japan-mfg") return "japan";
+    const counts = {};
+    (company.people || []).forEach(person => {
+      const region = this.cityRegion(person.city);
+      counts[region] = (counts[region] || 0) + 1;
+    });
+    const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    return ranked.length ? ranked[0][0] : "other";
+  }
+  industryColor(type, selected) {
+    if (selected) return "#08a4b8";
+    return ({
+      "japan-mfg": "#c9897a",
+      auto: "#c4a574",
+      semi: "#7ea0c4",
+      core: "#8aa07a",
+      energy: "#5ea8a0",
+      it: "#7f93a8",
+      startup: "#a48bb0"
+    })[type] || "#6d838a";
+  }
+  computeRadarLayout(companies) {
+    const regions = ["south", "west", "north", "east", "japan", "other"];
+    const grouped = {};
+    const maxN = Math.max(1, ...companies.map(company => company.n || 0));
+    const minN = Math.min(...companies.map(company => company.n || 0));
+    companies.forEach(company => {
+      const region = this.companyRegion(company);
+      (grouped[region] || (grouped[region] = [])).push(company);
+    });
+    const layout = {};
+    regions.forEach((region, regionIndex) => {
+      const list = (grouped[region] || []).slice().sort((a, b) => (b.n || 0) - (a.n || 0) || a.name.localeCompare(b.name));
+      const wedge = 360 / regions.length;
+      const start = regionIndex * wedge - 90;
+      list.forEach((company, index) => {
+        const span = wedge * 0.7;
+        const angle = start + (wedge - span) / 2 + (list.length <= 1 ? span / 2 : (index / (list.length - 1)) * span);
+        const t = (maxN - (company.n || 0)) / (maxN - minN || 1);
+        const radius = 20 + t * 23;
+        const rad = angle * Math.PI / 180;
+        layout[company.name] = {
+          left: 50 + radius * Math.cos(rad),
+          top: 50 + radius * Math.sin(rad),
+          angleDeg: (angle + 360) % 360,
+          radius,
+          region,
+          industry: company.type,
+          n: company.n,
+          wave: t < 0.33 ? 0 : t < 0.67 ? 1 : 2
+        };
+      });
+    });
+    return layout;
+  }
+  radarLayout() {
+    const emp = this.emp();
+    if (!emp) return {};
+    const key = emp.companies.map(company => company.name + ":" + company.n + ":" + company.type).join("|");
+    if (this._radarLayoutKey !== key) {
+      this._radarLayoutKey = key;
+      this._radarLayout = this.computeRadarLayout(emp.companies);
+    }
+    return this._radarLayout;
+  }
+  stopRadarAcquisition() {
+    if (this._acquire && this._acquire.raf) cancelAnimationFrame(this._acquire.raf);
+    this._acquire = null;
+  }
+  startRadarAcquisition() {
+    this.stopRadarAcquisition();
+    const emp = this.emp();
+    if (!emp) return;
+    const names = emp.companies.map(company => company.name);
+    if (this.reduceMotion) {
+      this.set({ radarAcquire: "ready", radarRevealed: names });
+      return;
+    }
+    const layout = this.radarLayout();
+    const waves = [[], [], []];
+    names.forEach(name => {
+      const wave = layout[name] ? layout[name].wave : 2;
+      waves[Math.max(0, Math.min(2, wave))].push(name);
+    });
+    this._acquire = { waves, revealed: new Set(), start: performance.now() };
+    if (this.state.radarAcquire !== "scanning") this.set({ radarAcquire: "scanning", radarRevealed: [] });
+    const tick = () => {
+      if (!this._acquire || this.state.radarAcquire !== "scanning") return;
+      const sweep = document.querySelector("[data-radar-sweep]");
+      let duration = 4000;
+      let deg = 0;
+      if (sweep) {
+        duration = (parseFloat(getComputedStyle(sweep).animationDuration) || 4) * 1000;
+        const anim = sweep.getAnimations && sweep.getAnimations()[0];
+        if (anim && Number.isFinite(anim.currentTime)) deg = ((anim.currentTime / duration) * 360) % 360;
+      }
+      const elapsed = performance.now() - this._acquire.start;
+      const pass = Math.min(2, Math.floor(elapsed / duration));
+      const eligible = waves.slice(0, pass + 1).flat();
+      let added = false;
+      eligible.forEach(name => {
+        if (this._acquire.revealed.has(name)) return;
+        const pos = layout[name];
+        if (!pos) {
+          this._acquire.revealed.add(name);
+          added = true;
+          return;
+        }
+        const dotDeg = (Math.atan2(pos.top - 50, pos.left - 50) * 180 / Math.PI + 90 + 360) % 360;
+        const diff = Math.abs(((dotDeg - deg + 540) % 360) - 180);
+        if (diff <= 16) {
+          this._acquire.revealed.add(name);
+          added = true;
+        }
+      });
+      if (elapsed > duration * 3.05) {
+        names.forEach(name => this._acquire.revealed.add(name));
+        const revealed = names.slice();
+        this._acquire = null;
+        this.set({ radarAcquire: "ready", radarRevealed: revealed });
+        return;
+      }
+      if (added) this.set({ radarRevealed: Array.from(this._acquire.revealed) });
+      this._acquire.raf = requestAnimationFrame(tick);
+    };
+    this._acquire.raf = requestAnimationFrame(tick);
   }
   landingDots() {
     const nodes = []; let i = 0;
@@ -1998,6 +2271,30 @@ class Component extends DCLogic {
       isLocked: !s.claimed && !s.onboardingStage,
       isValidating: s.onboardingStage === "validating",
       showWelcome: s.claimed && s.onboardingStage === "welcome",
+      showCampusChrome: s.claimed && s.onboardingStage !== "welcome",
+      welcomeSky: s.claimed ? (s.onboardingStage === "welcome" ? (s.welcomeSky || (this.reduceMotion ? "landed" : "pulled")) : "landed") : "",
+      welcomeName: (s.profile.name || "").trim() || "officer",
+      welcomeTitle: s.welcomeSky === "zooming" ? "Opening Campus Radar." : "You're in, " + ((s.profile.name || "").trim() || "officer") + ". Campus Radar is first.",
+      welcomeBody: s.welcomeSky === "zooming" ? "Watch the sweep. Employers appear as the beam finds them — closer means more alumni, angle is region, colour is industry." : "Jobs access, Research, and the rest of the campus suite sit around it. Not released yet.",
+      radarAcquire: s.claimed ? (s.radarAcquire || "idle") : "idle",
+      showRadarLegend: s.claimed && s.onboardingStage !== "welcome",
+      radarKeyClass: (s.radarKeyOpen ? "is-open" : "") + (s.radarKeyDismissed ? " is-dismissed" : ""),
+      radarKeyExpanded: s.radarKeyOpen ? "true" : "false",
+      onRadarKeyToggle: () => this.toggleRadarKey(),
+      onRadarKeyClose: () => this.closeRadarKey(),
+      onRadarKeyLeave: () => this.resetRadarKeyDismissed(),
+      radarStatus: s.radarAcquire === "scanning" ? "Finding employers · " + (s.radarRevealed || []).length + " / " + emp.companies.length : "Campus graph",
+      industrySwatches: (window.PULSE_CAMPUS.companyTypes || []).map(type => ({
+        label: type.id === "japan-mfg" ? "Japan mfg" : type.id === "semi" ? "Semi" : type.id === "startup" ? "Startup" : type.name.split(" ")[0],
+        color: this.industryColor(type.id, false)
+      })),
+      comingTools: [
+        { id: "jobs", label: "Jobs access", hint: "Fresher and internship roles with employer intelligence", title: "Jobs access — coming. Latest fresher and internship roles with employer intelligence.", delay: "0ms" },
+        { id: "research", label: "Research", hint: "Company intelligence for discovery", title: "Research — coming. Intelligence to discover and understand employers.", delay: "40ms" },
+        { id: "alumni", label: "Alumni door", hint: "Alumni log in later", title: "Alumni door — coming. Alumni log in later.", delay: "80ms" },
+        { id: "batch", label: "Batch rooms", hint: "Coordinate 2027 as a group", title: "Batch rooms — coming. Coordinate 2027 as a group.", delay: "120ms" },
+        { id: "invite", label: "Invite 2027", hint: "The list the office already mails", title: "Invite 2027 — coming. The list the office already mails.", delay: "160ms" }
+      ],
       lockTeaser: camp.alumni.toLocaleString("en-IN") + " alumni appear as campus counts. Employer details, available alumni, and live roles stay closed until this office is verified.",
       looks: s.looks,
       fuelLabel: s.pro ? "Pro · AI actions" : s.looks <= 0 ? "Out" : "Pulse",
@@ -2015,8 +2312,8 @@ class Component extends DCLogic {
       inboxColor: s.inbox.some(i => i.status === "replied") ? "#08a4b8" : "#fcfcfc",
       onInbox: () => this.setState({ overlay: "inbox" }),
       onNextDay: () => this.nextDay(),
-      onReset: () => { this.clearOnboardingTimers(); this.clearPlanTimers(); try { localStorage.removeItem(this.STORAGE); } catch (e) {} this._empCache = {}; this.setState(this.defaults()); },
-      showMomentum: s.claimed && (this.props.showMomentum ?? true) !== false,
+      onReset: () => { this.stopRadarAcquisition(); this.clearOnboardingTimers(); this.clearPlanTimers(); try { localStorage.removeItem(this.STORAGE); } catch (e) {} this._empCache = {}; this.setState(this.defaults()); },
+      showMomentum: s.claimed && s.onboardingStage !== "welcome" && (this.props.showMomentum ?? true) !== false,
       momentumPct: pct, momentumScale: pct / 100, milestone, milestoneMotionClass: s.milestoneCue ? "is-changing" : "", flash: s.flash || false,
       inspectorMotionClass: s.inspectorEnter ? "inspector-enter signal-acquiring" : "",
       taskModeClass: sideOpen || companyDirectoryOpen ? "is-task-mode" : "",
@@ -2027,22 +2324,30 @@ class Component extends DCLogic {
       sideOpen,
       radarCos: emp.companies.map((co, idx, all) => {
         const pos = this.coPos(idx, all.length);
+        const layout = this.radarLayout()[co.name] || {};
         const on = this.sameCompany(s.inspectCompany, co.name) && !s.inspectName;
         const ping = !!(s.pingNow && this.sameCompany(s.pingNow.company, co.name));
+        const acquired = s.radarAcquire === "ready" || (s.radarRevealed || []).includes(co.name);
         return {
           left: pos.left, top: pos.top,
+          name: co.name,
           label: co.n + " alumni counts at " + co.name,
-          dotBg: on || ping ? "#08a4b8" : "#6d838a",
+          industry: layout.industry || co.type || "",
+          region: layout.region || "",
+          n: co.n,
+          dotBg: this.industryColor(co.type, on || ping),
           dotShadow: on ? "0 0 0 5px rgba(8,164,184,0.22), 0 0 12px rgba(8,164,184,0.55)" : ping ? "0 0 10px rgba(8,164,184,0.7)" : "none",
           dotScale: on ? "scale(1.7)" : "scale(1)",
-          opacity: inspecting && !on ? 0.32 : 1,
+          opacity: !acquired ? 0 : inspecting && !on ? 0.32 : 1,
+          acquireClass: s.radarAcquire === "scanning" && !acquired ? "is-acquiring" : s.radarAcquire === "scanning" && acquired ? "is-found" : "",
           on, ping,
           pingLabel: ping && s.pingNow ? s.pingNow.short : "",
-          disabled: this.navigationLocked(),
+          disabled: this.navigationLocked() || !acquired,
           open: () => this.openCompany(co.name)
         };
       }),
       radarPeeps: (() => {
+        if (s.radarAcquire === "scanning" || s.onboardingStage === "welcome") return [];
         const mixed = [];
         emp.companies.forEach(co => co.people.forEach(p => { if (s.onPulse.includes(p.key) && mixed.length < 26) mixed.push(p); }));
         return mixed.map((p, idx) => {

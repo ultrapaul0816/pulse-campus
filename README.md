@@ -26,7 +26,7 @@ Copy must stay honest: Pulse can see **counts** from public professional profile
 
 1. **Find the campus path** — search and pick a college from the single primary control.
 2. **Claim the office** — name, placement role, and work email. The prototype visibly simulates work-domain verification: check domain → match campus office → secure campus graph. A guest does **not** get another university’s graph.
-3. **Welcome, then radar** — the welcome calibration shows mapped employers, available alumni, and warm roles; Free remains evidence exploration with 3 introductions/day, while Pro adds reviewed AI plans and batch outreach. Then employers appear as dots, with logos in the dock. A teal status dot means alumni are available.
+3. **Welcome, then radar** — after office verification, the workspace holds on the campus suite, then slowly opens Campus Radar. Employers are empty at first and paint in over three sweep passes: closer = more alumni, angle = region, colour = industry. Skip the suite zoom any time; the sweep still runs on first open. Reloads show the completed graph.
 4. **Click a company** — campus-match evidence appears before available alumni by role, branch, class year, and city. **No legal names.** Live jobs sit alongside them.
 5. **Hello on Pulse** — Free starts 3 connections/day. Pro prepares a tailored draft for every available alumnus at the selected company, then sends only after one explicit review.
 6. **After they reply** — a second Pulse ask: HR intro / two profiles / placement pipeline.
@@ -98,7 +98,7 @@ mood.md / voice.md / tokens.md   Prototype brand, copy, and design-system guidan
 
 ### Prototype extras (root `index.html`)
 
-- **Onboarding** — simulated work-email validation and a pre-radar welcome are transient UI state; saved v2 demo fixtures reopen at a stable surface, never half-way through a verification animation
+- **Onboarding** — simulated work-email validation and a one-shot suite zoom into Campus Radar are transient UI state; saved v2 demo fixtures reopen at a stable surface, never half-way through a verification or zoom animation
 - **Momentum bar** — climbs on visit (+3), reveal (+10), ask (+14), reply (+20)
 - **Radar pings** — every ~5s, floating signal labels + sonar echo
 - **Company dock** — the twelve most actionable employers, ranked by fresh arrival, available alumni, hiring activity, and alumni count; every employer remains a radar dot and is available in a searchable, filtered `View all` directory

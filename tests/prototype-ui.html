@@ -318,8 +318,8 @@
       const persistedOnboarding = JSON.parse(localStorage.getItem(STORAGE) || "{}");
       report(
         "transient onboarding fields are omitted from persisted v2 state",
-        !["onboardingStage", "validationStep", "claimError"].some(key => Object.prototype.hasOwnProperty.call(persistedOnboarding, key)),
-        Object.keys(persistedOnboarding).filter(key => ["onboardingStage", "validationStep", "claimError"].includes(key)).join(", ") || "none"
+        !["onboardingStage", "validationStep", "claimError", "welcomeSky", "radarAcquire", "radarRevealed"].some(key => Object.prototype.hasOwnProperty.call(persistedOnboarding, key)),
+        Object.keys(persistedOnboarding).filter(key => ["onboardingStage", "validationStep", "claimError", "welcomeSky", "radarAcquire", "radarRevealed"].includes(key)).join(", ") || "none"
       );
       const validationPanel = await waitFor(
         () => onboardingLanding.querySelector("[data-flow-stage='validating']"),
@@ -350,23 +350,49 @@
 
       const welcomePanel = await waitFor(
         () => onboardingLanding.querySelector("[data-flow-welcome]"),
-        "welcome calibration panel",
+        "welcome sequence",
         3000
       ).catch(() => null);
       const welcomeText = welcomePanel ? welcomePanel.textContent.replace(/\s+/g, " ") : "";
+      const welcomeSky = onboardingLanding.querySelector("[data-welcome-sky]");
+      const comingTools = welcomeSky
+        ? Array.from(welcomeSky.querySelectorAll("[data-coming-tool]")).map(node => node.getAttribute("data-coming-tool"))
+        : [];
+      const skyText = welcomeSky ? welcomeSky.textContent.replace(/\s+/g, " ") : "";
       report(
-        "welcome calibrates Free exploration and Pro reviewed action before radar entry",
-        Boolean(welcomePanel && /Free: explore all evidence \+ 3 introductions\/day/.test(welcomeText) && /Pro: AI plans and reviewed batch outreach/.test(welcomeText) && /Enter campus radar/.test(welcomeText) && /employers mapped/.test(welcomeText) && /alumni available on Pulse/.test(welcomeText) && /warm live roles/.test(welcomeText)),
-        welcomeText || "welcome panel missing"
+        "welcome names the officer and presents Campus Radar as the first release",
+        Boolean(welcomePanel && /You're in, UI Test/.test(welcomeText) && /Campus Radar is first/.test(welcomeText) && welcomePanel.querySelector("[data-flow-welcome-skip]")),
+        welcomeText || "welcome missing"
       );
-      const enterRadar = welcomePanel && Array.from(welcomePanel.querySelectorAll("button")).find(button => button.textContent.includes("Enter campus radar"));
-      if (enterRadar) enterRadar.click();
+      report(
+        "welcome shows the coming campus suite around Campus Radar",
+        ["alumni", "batch", "invite", "jobs", "research"].every(id => comingTools.includes(id)) && /Jobs access/i.test(skyText) && /Research/i.test(skyText) && /Alumni door/i.test(skyText) && /Batch rooms/i.test(skyText) && /Invite 2027/i.test(skyText),
+        comingTools.join(", ") || "coming tools missing"
+      );
+      report(
+        "welcome starts pulled back from the larger tool set",
+        Boolean(welcomeSky && welcomeSky.getAttribute("data-welcome-sky") === "pulled"),
+        welcomeSky ? welcomeSky.getAttribute("data-welcome-sky") : "sky missing"
+      );
+      const skipWelcome = welcomePanel && welcomePanel.querySelector("[data-flow-welcome-skip]");
+      if (skipWelcome) skipWelcome.click();
       const enteredRadar = await waitFor(
         () => onboardingLanding.querySelector("[data-flow-welcome]") ? false : onboardingLanding.querySelector("[data-screen-label='Market tape']"),
         "campus radar after welcome",
         1500
       ).catch(() => null);
-      report("welcome enters the claimed campus radar", Boolean(enteredRadar), enteredRadar ? "radar visible" : "radar not entered");
+      report("skip lands on the claimed campus radar", Boolean(enteredRadar), enteredRadar ? "radar visible" : "radar not entered");
+      report(
+        "first radar opening starts a sweep acquisition instead of showing every employer at once",
+        Boolean(enteredRadar && onboardingLanding.querySelector("[data-radar-acquire='scanning']")),
+        onboardingLanding.querySelector("[data-radar-acquire]") ? onboardingLanding.querySelector("[data-radar-acquire]").getAttribute("data-radar-acquire") : "acquire state missing"
+      );
+      const remnantTools = enteredRadar ? Array.from(onboardingLanding.querySelectorAll("[data-coming-tool]")) : [];
+      report(
+        "coming tools remain as outer marks after radar entry",
+        remnantTools.length === 5 && Boolean(onboardingLanding.querySelector("[data-welcome-sky='landed']")),
+        `${remnantTools.length} remnants; sky ${onboardingLanding.querySelector("[data-welcome-sky]") ? onboardingLanding.querySelector("[data-welcome-sky]").getAttribute("data-welcome-sky") : "missing"}`
+      );
 
       const reducedLanding = await load(
         { scene: "landing", collegeId: null, claimed: false },
@@ -404,6 +430,17 @@
         "reduced motion visibly completes validation before welcome",
         reducedRows.length === 3 && reducedRows.every(row => /verified/i.test(row.textContent)) && !reducedWelcomeVisible,
         reducedValidation ? `${reducedRows.filter(row => /verified/i.test(row.textContent)).length}/3 verified; welcome ${reducedWelcomeVisible ? "visible" : "deferred"}` : "validation panel missing"
+      );
+      const reducedWelcome = await waitFor(
+        () => reducedLanding.querySelector("[data-flow-welcome]"),
+        "reduced-motion welcome",
+        1500
+      ).catch(() => null);
+      const reducedSky = reducedLanding.querySelector("[data-welcome-sky]");
+      report(
+        "reduced motion lands already zoomed into Campus Radar",
+        Boolean(reducedWelcome && reducedSky && reducedSky.getAttribute("data-welcome-sky") === "landed"),
+        reducedSky ? reducedSky.getAttribute("data-welcome-sky") : "reduced-motion sky missing"
       );
 
       const campus = await load({
@@ -446,6 +483,63 @@
       report("journey state changes use restrained color transitions", journeyStyle && journeyStyle.transitionProperty.includes("color") && parseFloat(journeyStyle.transitionDuration) <= 0.16, journeyStyle ? `${journeyStyle.transitionProperty} ${journeyStyle.transitionDuration}` : "journey step missing");
       report("the detailed company dock is capped at twelve choices", dockButtons.length === 12, `${dockButtons.length} detailed companies`);
       report("the radar still represents every campus employer", radarCompanies.length === 27, `${radarCompanies.length} employer signals`);
+      const industryValues = new Set(radarCompanies.map(dot => dot.getAttribute("data-industry")).filter(Boolean));
+      const regionValues = new Set(radarCompanies.map(dot => dot.getAttribute("data-region")).filter(Boolean));
+      report("radar dots encode industry", industryValues.size >= 3, Array.from(industryValues).join(", ") || "no industry encoding");
+      report("radar dots encode region", regionValues.size >= 2, Array.from(regionValues).join(", ") || "no region encoding");
+      const disc = campus.querySelector(".radar-disc");
+      const discRect = disc ? disc.getBoundingClientRect() : null;
+      const cx = discRect ? discRect.left + discRect.width / 2 : 0;
+      const cy = discRect ? discRect.top + discRect.height / 2 : 0;
+      const plotted = radarCompanies.map(dot => {
+        const rect = dot.getBoundingClientRect();
+        return {
+          n: Number(dot.getAttribute("data-alumni-count") || 0),
+          dist: Math.hypot(rect.left + rect.width / 2 - cx, rect.top + rect.height / 2 - cy)
+        };
+      }).filter(row => row.n > 0);
+      const byDist = plotted.slice().sort((a, b) => a.dist - b.dist);
+      const inner = byDist.slice(0, Math.floor(byDist.length / 2));
+      const outer = byDist.slice(Math.ceil(byDist.length / 2));
+      const avg = rows => rows.reduce((sum, row) => sum + row.n, 0) / Math.max(rows.length, 1);
+      report(
+        "radar distance maps closer dots to stronger alumni counts",
+        discRect && inner.length && outer.length && avg(inner) > avg(outer),
+        discRect ? `inner ${avg(inner).toFixed(1)} alumni vs outer ${avg(outer).toFixed(1)}` : "radar disc missing"
+      );
+      report(
+        "claimed radar is fully acquired",
+        campus.querySelector("[data-radar-acquire='ready']"),
+        campus.querySelector("[data-radar-acquire]") ? campus.querySelector("[data-radar-acquire]").getAttribute("data-radar-acquire") : "acquire state missing"
+      );
+      const radarKey = campus.querySelector("[data-radar-legend]");
+      const radarKeyPanel = radarKey && radarKey.querySelector(".radar-key-panel");
+      const radarKeyToggle = radarKey && radarKey.querySelector(".radar-key-toggle");
+      const radarKeyClose = radarKey && radarKey.querySelector(".radar-key-close");
+      const radarKeyToggleRect = radarKeyToggle && radarKeyToggle.getBoundingClientRect();
+      const radarKeyPanelStyle = radarKeyPanel ? getComputedStyle(radarKeyPanel) : null;
+      report(
+        "radar reading key stays closed until hover or tap",
+        Boolean(radarKey && radarKeyToggle && radarKeyToggle.getAttribute("aria-expanded") === "false" && radarKeyPanelStyle && parseFloat(radarKeyPanelStyle.opacity) === 0),
+        radarKeyToggle ? `expanded=${radarKeyToggle.getAttribute("aria-expanded")}; opacity=${radarKeyPanelStyle ? radarKeyPanelStyle.opacity : "missing"}` : "legend missing"
+      );
+      report(
+        "radar reading key is a 40×40 control",
+        Boolean(radarKeyToggleRect && radarKeyToggleRect.width >= 40 && radarKeyToggleRect.height >= 40),
+        radarKeyToggleRect ? `${Math.round(radarKeyToggleRect.width)}×${Math.round(radarKeyToggleRect.height)}px` : "toggle missing"
+      );
+      if (radarKeyToggle) radarKeyToggle.click();
+      if (radarKeyClose) radarKeyClose.click();
+      report(
+        "radar reading key can be dismissed",
+        Boolean(radarKeyToggle && radarKeyToggle.getAttribute("aria-expanded") === "false" && radarKeyPanel && parseFloat(getComputedStyle(radarKeyPanel).opacity) === 0),
+        radarKeyToggle ? `expanded=${radarKeyToggle.getAttribute("aria-expanded")}` : "legend missing"
+      );
+      report(
+        "claimed radar keeps coming-tool remnants without replaying welcome",
+        !campus.querySelector("[data-flow-welcome]") && campus.querySelectorAll("[data-coming-tool]").length === 5 && campus.querySelector("[data-welcome-sky='landed']"),
+        campus.querySelector("[data-flow-welcome]") ? "welcome replayed" : `${campus.querySelectorAll("[data-coming-tool]").length} remnants`
+      );
       report("the dock summary states the visible and full employer counts", companyCountLine && /Showing 12 of 27 employers/.test(companyCountLine.textContent), companyCountLine ? companyCountLine.textContent.trim() : "summary missing");
       report("dock company marks stay compact", dockMarks.length === 12 && dockMarks.every(mark => mark.getBoundingClientRect().width <= 30 && mark.getBoundingClientRect().height <= 30), `${dockMarks.length} marks`);
       const dockLogoImages = dockMarks.map(mark => mark.querySelector("img[data-logo]")).filter(Boolean);
