@@ -4,11 +4,10 @@ Desktop-first **TPO first-session mock** for Cognavi Pulse. A placement office c
 
 No backend. Seeded demo data. Session in `localStorage`. Not the full University OS (`cognavi-university` — leave that repo alone).
 
-**Live (current design prototype):** https://ultrapaul0816.github.io/pulse-campus/  
-**Vanilla SPA (previous implementation):** https://ultrapaul0816.github.io/pulse-campus/app/  
+**Live:** https://ultrapaul0816.github.io/pulse-campus/  
 **Repo:** https://github.com/ultrapaul0816/pulse-campus
 
-The root page is the design-canvas prototype (`index.html` + `support.js`) with momentum, radar pings, daily drop, market tape, campus report, and a threaded inbox. It reads `app/data.js` and `app/graph.js`. The earlier IIFE mock still lives in `app/`. Handoff notes: `prototype/HANDOFF.md`.
+The root page is the design-canvas prototype (`index.html` + `support.js`) with momentum, radar pings, daily drop, market tape, campus report, and a threaded inbox. It reads `app/data.js` and `app/graph.js`. Handoff notes: `prototype/HANDOFF.md`.
 
 ---
 
@@ -38,7 +37,7 @@ Three chips: *Company → Alumni available → Pulse message*.
 
 Many real campuses have **nobody** on Pulse. Do not invent a roster. The radar is company **counts**. Invite **2027** is the only day-one work they already do (the list they mail). Alumni paste is optional later in **File**; names appear when those people join.
 
-For the **clickable demo**, the mock seeds a few people as already on Pulse at the largest employers (Infosys, Bosch, TCS, then L&T, Denso, Zoho) so a TPO can complete reveal → ask in one sitting. That seed is `seedCampusPulse()` in `app/app.js`. It runs only when `onPulse` is empty.
+For the **clickable demo**, the mock seeds a few people as already on Pulse at the largest employers (Infosys, Bosch, TCS, then L&T, Denso, Zoho) so a TPO can complete reveal → ask in one sitting.
 
 ---
 
@@ -68,14 +67,13 @@ python3 -m http.server 3020 --bind 127.0.0.1
 ```
 
 - Prototype (designs): http://127.0.0.1:3020/
-- Vanilla SPA: http://127.0.0.1:3020/app/
 - UI acceptance checks: http://127.0.0.1:3020/tests/prototype-ui.html
 
 **Reset demo** in the header clears `localStorage` and starts over.
 
 Query: `?hold=1` holds the old scan animation if you ever re-enable that scene.
 
-After CSS/JS edits, bump the `?v=` query on the matching tag in `app/index.html` or the browser will keep a stale file.
+After CSS/JS edits, bump the `?v=` query on the matching tag in `index.html` or the browser will keep a stale file.
 
 ---
 
@@ -84,12 +82,9 @@ After CSS/JS edits, bump the `?v=` query on the matching tag in `app/index.html`
 ```
 index.html        Design-canvas prototype (current TPO designs). STORAGE = pulse-campus:dc:v2
 support.js        Prototype runtime (generated). Do not hand-edit.
-app/index.html    Vanilla IIFE SPA (previous implementation)
-app/styles.css    Grok dark + teal
 app/data.js       14 colleges, employer counts, jobs j1–j27 (some intern: true)
 app/graph.js      buildEmployment, role books, COMPANY_DOMAINS, logoHTML / logoSrc
-app/logos/        local PNG marks (`{domain}.png`) — used by prototype and SPA
-app/app.js        IIFE SPA. STORAGE = pulse-campus:tpo:v8. LOOKS_MAX = 3
+app/logos/        local PNG marks (`{domain}.png`) — used by the prototype
 prototype/HANDOFF.md   Notes from the design drop (momentum, tape, daily drop, inbox)
 tests/prototype-ui.html Browser acceptance checks for responsive layout, contrast, targets, motion, and inspector containment
 mood.md / voice.md / tokens.md   Prototype brand, copy, and design-system guidance
@@ -119,11 +114,10 @@ mood.md / voice.md / tokens.md   Prototype brand, copy, and design-system guidan
 - `graph.js` — turns company counts × role book into people. Keys look like `Bosch|Quality Engineer|Rohit V.` or `Bosch|Quality Engineer|0` for synthesised rows. Logos: `app/logos/{domain}.png` copied from **Pulse** (`logoUrl` on `/api/companies`, CI3 + Pulse S3). Favicon then initials if missing.
 - Live jobs in `data.js` are illustrative of Pulse/market cuts, not a live API. The prototype simulates one incoming Bosch role; production will replace that timer with a real stream. College affinity = **counts**, not verified names.
 
-### State (`app.js`)
+### State
 
-- `localStorage` key: `pulse-campus:tpo:v8`
-- Important fields: `collegeId`, `claimed`, `looks`, `onPulse[]`, `unlocked[]`, `today[]`, `inbox[]`, `inspectCompany` / `inspectName` / `inspectRole`, `askOpen`, `day`
-- Guest until Reveal/claim. Claim form sits on the person card.
+- `localStorage` key: `pulse-campus:dc:v2` (prototype demo fixtures + session)
+- Guest until Reveal/claim.
 - Bump `STORAGE` if you change the default shape and old sessions would break.
 
 ---
@@ -134,7 +128,7 @@ mood.md / voice.md / tokens.md   Prototype brand, copy, and design-system guidan
 - Company card is not the job board. People on Pulse come first. Jobs are “Open now” under the person/company.
 - Do not reintroduce a jobs tank, hover popovers as the desktop path, or LinkedIn as the ask channel.
 - Do not auto-mail anyone. Pro may prepare and select a batch, but the TPO must review and explicitly send it.
-- Prefer editing `app/app.js` + `app/styles.css` + `app/graph.js`. Cache-bust in `index.html`.
+- Prefer editing `index.html` + `app/data.js` + `app/graph.js`. Cache-bust in `index.html`.
 - Verify in a browser (desktop 1440×900). Isolated profile / Reset demo so leftover `localStorage` does not mix sessions.
 - Also verify the 1366×768 short-laptop layout and run `tests/prototype-ui.html` before considering a UI pass complete.
 - Alumni door and mobile story-sheet are **later**, not this mock.
