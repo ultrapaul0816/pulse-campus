@@ -716,14 +716,15 @@
       );
       const studentActions = jobDetail ? Array.from(jobDetail.querySelectorAll("button")) : [];
       const primaryStudentAction = jobDetail && jobDetail.querySelector("[data-job-primary-action]");
+      const batchCheckAction = jobDetail && jobDetail.querySelector("[data-job-batch-action]");
       report(
-        "exact role evidence starts with Connect 2027 batch evidence and never offers recommendation controls",
-        Boolean(primaryStudentAction && primaryStudentAction.textContent.trim() === "Connect 2027 batch evidence" && !Array.from(campus.querySelectorAll("button")).some(button => /Recommend my 2027|Match my 2027/.test(button.textContent))),
+        "exact role evidence leads with the human path and keeps the 2027 check internal",
+        Boolean(primaryStudentAction && /Connect with the hiring manager/.test(primaryStudentAction.textContent) && batchCheckAction && batchCheckAction.textContent.trim() === "Check 2027 fit" && !Array.from(campus.querySelectorAll("button")).some(button => /Recommend my 2027|Match my 2027|Connect 2027 batch evidence/.test(button.textContent))),
         studentActions.map(button => button.textContent.trim()).join(" | ") || "student action missing"
       );
       const jobInspectorTargets = jobDetail ? visibleInteractiveTargets(campus, "[data-job-detail] button") : [];
       report("job inspector controls provide at least 40×40px targets", allTargetsAtLeast40(jobInspectorTargets), targetGeometryDetail(jobInspectorTargets) || `${jobInspectorTargets.length} targets`);
-      const connectBatchEvidence = primaryStudentAction;
+      const connectBatchEvidence = batchCheckAction;
       if (connectBatchEvidence) {
         connectBatchEvidence.focus();
         connectBatchEvidence.click();
@@ -1032,7 +1033,7 @@
       const proDataAnalyst = Array.from(proCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Infosys/.test(button.textContent) && /Data Analyst/.test(button.textContent));
       if (proDataAnalyst) proDataAnalyst.click();
       const proJobDetail = await waitFor(() => proCampus.querySelector("[data-job-detail]"), "Pro exact job evidence").catch(() => null);
-      const proConnectBatch = proJobDetail && proJobDetail.querySelector("[data-job-primary-action]");
+      const proConnectBatch = proJobDetail && proJobDetail.querySelector("[data-job-batch-action]");
       if (proConnectBatch) proConnectBatch.click();
       const proBatchEvidence = await waitFor(() => proCampus.querySelector("[data-batch-evidence]"), "Pro batch evidence").catch(() => null);
       const proConnectDemo = proBatchEvidence && Array.from(proBatchEvidence.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
@@ -1164,7 +1165,7 @@
       const alumniOnlyJob = Array.from(alumniOnlyCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Infosys/.test(button.textContent) && /Data Analyst/.test(button.textContent));
       if (alumniOnlyJob) alumniOnlyJob.click();
       const alumniOnlyJobDetail = await waitFor(() => alumniOnlyCampus.querySelector("[data-job-detail][data-job-id='j18']"), "alumni-only exact job evidence").catch(() => null);
-      const alumniOnlyConnect = alumniOnlyJobDetail && alumniOnlyJobDetail.querySelector("[data-job-primary-action]");
+      const alumniOnlyConnect = alumniOnlyJobDetail && alumniOnlyJobDetail.querySelector("[data-job-batch-action]");
       if (alumniOnlyConnect) alumniOnlyConnect.click();
       const alumniOnlyBatchEvidence = await waitFor(() => alumniOnlyCampus.querySelector("[data-batch-evidence]"), "alumni-only batch evidence").catch(() => null);
       const alumniOnlyDemo = alumniOnlyBatchEvidence && Array.from(alumniOnlyBatchEvidence.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
@@ -1211,7 +1212,7 @@
       const relianceJob = Array.from(batchOnlyCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Process Engineer/.test(button.textContent) && /Reliance Industries/.test(button.textContent));
       if (relianceJob) relianceJob.click();
       const relianceDetail = await waitFor(() => batchOnlyCampus.querySelector("[data-job-detail][data-job-id='j10']"), "Reliance Process Engineer evidence").catch(() => null);
-      const relianceConnect = relianceDetail && relianceDetail.querySelector("[data-job-primary-action]");
+      const relianceConnect = relianceDetail && relianceDetail.querySelector("[data-job-batch-action]");
       if (relianceConnect) relianceConnect.click();
       const relianceBatch = await waitFor(() => batchOnlyCampus.querySelector("[data-batch-evidence]"), "Reliance batch evidence").catch(() => null);
       const relianceDemo = relianceBatch && Array.from(relianceBatch.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
@@ -1286,7 +1287,7 @@
       const lockedRelianceJob = Array.from(lockedDeliveryCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Process Engineer/.test(button.textContent) && /Reliance Industries/.test(button.textContent));
       if (lockedRelianceJob) lockedRelianceJob.click();
       const lockedRelianceDetail = await waitFor(() => lockedDeliveryCampus.querySelector("[data-job-detail][data-job-id='j10']"), "locked Reliance job evidence").catch(() => null);
-      const lockedConnect = lockedRelianceDetail && lockedRelianceDetail.querySelector("[data-job-primary-action]");
+      const lockedConnect = lockedRelianceDetail && lockedRelianceDetail.querySelector("[data-job-batch-action]");
       if (lockedConnect) lockedConnect.click();
       const lockedBatch = await waitFor(() => lockedDeliveryCampus.querySelector("[data-batch-evidence]"), "locked delivery batch evidence").catch(() => null);
       const lockedDemo = lockedBatch && Array.from(lockedBatch.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
@@ -1348,7 +1349,7 @@
       const resetRelianceJob = Array.from(resetDeliveryCampus.querySelectorAll(".market-tape-track button:not([tabindex='-1'])")).find(button => /Process Engineer/.test(button.textContent) && /Reliance Industries/.test(button.textContent));
       if (resetRelianceJob) resetRelianceJob.click();
       const resetRelianceDetail = await waitFor(() => resetDeliveryCampus.querySelector("[data-job-detail][data-job-id='j10']"), "Reset Reliance Process Engineer evidence").catch(() => null);
-      const resetRelianceConnect = resetRelianceDetail && resetRelianceDetail.querySelector("[data-job-primary-action]");
+      const resetRelianceConnect = resetRelianceDetail && resetRelianceDetail.querySelector("[data-job-batch-action]");
       if (resetRelianceConnect) resetRelianceConnect.click();
       const resetRelianceBatch = await waitFor(() => resetDeliveryCampus.querySelector("[data-batch-evidence]"), "Reset Reliance batch evidence").catch(() => null);
       const resetRelianceDemo = resetRelianceBatch && Array.from(resetRelianceBatch.querySelectorAll("button")).find(button => button.textContent.trim() === "Connect demo batch evidence");
