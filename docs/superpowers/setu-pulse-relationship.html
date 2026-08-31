@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>setu on Pulse — relationship</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --teal:#077f90; --ink:#132b2e; --muted:#5f7478; --line:#d3dada; --bg:#eef3f3; --card:#fff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.45 Inter, system-ui, sans-serif; color: var(--ink); background: var(--bg); padding: 32px 24px 64px; }
+    h1 { font-size: 28px; letter-spacing: -0.04em; margin: 0 0 6px; }
+    .kicker { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); }
+    .sub { color: var(--muted); max-width: 72ch; margin: 0 0 28px; }
+    .grid { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 16px; align-items: stretch; }
+    .col { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 16px; }
+    .col h2 { font-size: 16px; margin: 0 0 10px; }
+    .pulse { grid-column: 1 / -1; background: #0f3d3a; color: #e8f4f4; border: 0; }
+    .pulse h2 { color: #3ad6c9; }
+    .pulse .muted { color: #9bb0b6; }
+    ul { margin: 0; padding: 0 0 0 16px; }
+    li { margin: 0 0 6px; }
+    .tag { display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; color: var(--muted); }
+    .pulse .tag { border-color: #1c5c58; color: #9bb0b6; }
+    .flow { display: grid; gap: 8px; margin-top: 18px; }
+    .arrow { text-align: center; font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--teal); letter-spacing: 0.06em; padding: 6px 0; }
+    .note { margin-top: 22px; font-size: 13px; color: var(--muted); max-width: 80ch; }
+    table { width: 100%; border-collapse: collapse; margin-top: 18px; background: var(--card); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 13px; }
+    th { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: #f4f8f8; }
+    tr:last-child td { border-bottom: 0; }
+  </style>
+</head>
+<body>
+  <div class="kicker">Cognavi · Pulse is the system of record</div>
+  <h1>Where setu lives</h1>
+  <p class="sub">setu is the college-facing lens on Pulse. Companies already have a lens (Business Dashboard). The shared graph is College Affinity. Messages and IDs are approved in Pulse, never in a side database.</p>
+
+  <div class="grid">
+    <div class="col">
+      <div class="kicker">College door</div>
+      <h2>setu <span class="tag">TPO lens</span></h2>
+      <ul>
+        <li>Claim office (work email → Pulse <code>collegeContacts</code>)</li>
+        <li>Radar of employers from affinity counts</li>
+        <li>Hiring teams, coordinated hellos, where they studied</li>
+        <li>Reviewed send into Pulse inbox / thread</li>
+      </ul>
+    </div>
+    <div class="col pulse">
+      <div class="kicker">System of record</div>
+      <h2>Pulse CRM</h2>
+      <ul>
+        <li><strong>Colleges</strong> + display IDs (CLG-…)</li>
+        <li><strong>Companies</strong> + JDs + engagements</li>
+        <li><strong>college_employer_affinity</strong> — Coresignal counts, both directions</li>
+        <li><strong>collegeContacts</strong> — TPO/HOD, email status, portal login</li>
+        <li><strong>Students</strong> (2027 batch) + company contacts</li>
+        <li>Staff approve IDs, claims, and data submissions</li>
+      </ul>
+      <p class="muted" style="margin:12px 0 0;font-size:12px">Affinity is directional intelligence from public profiles — not a verified headcount. Names stay private until the person is on Pulse and replies.</p>
+    </div>
+    <div class="col">
+      <div class="kicker">Company door</div>
+      <h2>Business Dashboard <span class="tag">company lens</span></h2>
+      <ul>
+        <li>Same Pulse company record</li>
+        <li>Sees feeder colleges (affinity PE mode)</li>
+        <li>Gets notified when a campus sends a hello or 2027 profiles</li>
+        <li>Can message back; TPO is notified on setu</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="arrow">messages college → company &nbsp;·&nbsp; Pulse <code>bd_notifications</code> &nbsp;·&nbsp; staff can hold for approval</div>
+    <div class="arrow">messages company → college &nbsp;·&nbsp; Pulse <code>tpo_notifications</code> &nbsp;·&nbsp; already used for new opportunities</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Who acts</th><th>Pulse object</th><th>What the other side sees</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>TPO claims campus</td>
+        <td><code>collegeContacts</code> pending → staff validates email/domain → <code>portalEnabled</code></td>
+        <td>Nothing yet. Graph unlocks after approval.</td>
+      </tr>
+      <tr>
+        <td>TPO opens a company</td>
+        <td>Read <code>college_employer_affinity</code> + <code>companies</code> (join brand name → id)</td>
+        <td>Optional later: “NIT Trichy viewed you” — only if we choose to surface interest.</td>
+      </tr>
+      <tr>
+        <td>TPO sends a reviewed hello</td>
+        <td>Thread on Pulse; <code>bd_notifications</code> type campus_hello</td>
+        <td>Company bell: a campus asked to talk. No legal alumni names.</td>
+      </tr>
+      <tr>
+        <td>Company replies / posts a JD targeted at that college</td>
+        <td><code>tpo_notifications</code> + existing <code>jd_college_targets</code></td>
+        <td>setu inbox: company replied, or a live role is aimed at this campus.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="note">Control stays in Pulse: Cognavi staff validate university contacts and college IDs; setu never writes a college or company master record of its own. Affinity is the seed graph; joins to <code>companies.id</code> must be canonicalised because affinity keys employers by brand name today.</p>
+</body>
+</html>
